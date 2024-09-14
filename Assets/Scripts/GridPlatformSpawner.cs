@@ -2,35 +2,50 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class GridPlatformSpawner : MonoBehaviour
+public class HexGridPlatformSpawner : MonoBehaviour
 {
+    // 타일 설정
+    [Header("Tile Settings")]
     public GameObject platformPrefab;   // 발판 프리팹
-    public Transform player;            // 플레이어의 Transform
-    public float initialPlatformLifetime = 3f; // 발판이 사라지기 전 초기 시간
-    public float respawnDelay = 3f;     // 발판이 사라진 후 재생성 지연 시간
-    public Color warningColor = Color.red; // 발판이 사라지기 전 경고 색상
-    public Color normalColor = Color.white; // 발판의 기본 색상
-    public int gridSize = 5;            // 발판 그리드 크기
+    public int rows = 5;                // 타일 행의 수
+    public int columns = 5;             // 타일 열의 수
+    public float hexSize = 1.0f;        // 육각형 타일의 크기
+    public float hexSpacing = 0.1f;     // 육각형 타일 사이의 간격
     public float platformScale = 1.0f;  // 발판 크기
-    public float difficultyIncreaseInterval = 10f; // 난이도 증가 주기
-    public float minPlatformLifetime = 1f; // 발판의 최소 생명 시간
-    public int maxPlatformsToDestroy = 1;    // 한 번에 사라지는 발판의 수 (처음 1개)
-    public int maxPlatformDestroyLimit = 12; // 동시에 사라지는 발판의 최대 수
+    public Color normalColor = Color.white; // 발판의 기본 색상
 
+    // 난이도 및 시간 설정
+    [Header("Difficulty and Timing")]
+    public float initialPlatformLifetime = 3f; // 발판이 사라지기 전 초기 시간
+    public float respawnDelay = 3f;            // 발판이 사라진 후 재생성 지연 시간
+    public float difficultyIncreaseInterval = 10f; // 난이도 증가 주기
+    public float minPlatformLifetime = 1f;     // 발판의 최소 생명 시간
+    public int maxPlatformsToDestroy = 1;      // 한 번에 사라지는 발판의 수 (초기값)
+    public int maxPlatformDestroyLimit = 12;   // 동시에 사라지는 발판의 최대 수
+    public int initialTilesToDestroy = 3;      // 처음에 부숴지는 타일 수
+    public Color warningColor = Color.red;     // 발판이 사라지기 전 경고 색상
+
+    // 플레이어 설정
+    [Header("Player Settings")]
+    public Transform player;                   // 플레이어의 Transform
+
+    // 내부 상태 관리 변수 (private)
     private List<GameObject> platforms = new List<GameObject>(); // 발판 리스트
     private float currentPlatformLifetime;
-    private float adjustedSpacing = 1.5f;  // 발판 간격을 겹치지 않도록 조정
 
     private void Start()
     {
         // 초기 발판 생성
-        SpawnInitialPlatforms();
+        SpawnHexagonalPlatforms();
 
         // 플레이어를 중앙 발판에 배치
         PlacePlayerAtCenter();
 
         // 초기 발판 생명 시간 설정
         currentPlatformLifetime = initialPlatformLifetime;
+
+        // 초기 타일 파괴
+        DestroyInitialTiles();
 
         // 난이도 조정 코루틴 시작
         StartCoroutine(IncreaseDifficulty());
@@ -39,16 +54,19 @@ public class GridPlatformSpawner : MonoBehaviour
         StartCoroutine(PlatformLifecycle());
     }
 
-    // 초기 발판 생성
-    private void SpawnInitialPlatforms()
+    // 육각형 배열로 발판 생성 (열과 행을 통해 배열)
+    private void SpawnHexagonalPlatforms()
     {
-        for (int x = 0; x < gridSize; x++)
+        float width = (hexSize + hexSpacing) * 2;
+        float height = Mathf.Sqrt(3) * (hexSize + hexSpacing);
+
+        // 행과 열의 수에 따라 발판 생성
+        for (int row = 0; row < rows; row++)
         {
-            for (int z = 0; z < gridSize; z++)
+            for (int col = 0; col < columns; col++)
             {
-                // 발판 생성, 45도 회전된 상태에서 간격 조정
-                Vector3 spawnPosition = new Vector3(x * adjustedSpacing, 0, z * adjustedSpacing);
-                GameObject platform = Instantiate(platformPrefab, spawnPosition, Quaternion.Euler(0, 45, 0));
+                Vector3 spawnPosition = HexToWorldPosition(col, row, width, height);
+                GameObject platform = Instantiate(platformPrefab, spawnPosition, Quaternion.identity);
 
                 // 발판 크기 조정
                 platform.transform.localScale = new Vector3(platformScale, 0.1f, platformScale);
@@ -60,19 +78,54 @@ public class GridPlatformSpawner : MonoBehaviour
                     renderer.material.color = normalColor;
                 }
 
-                platforms.Add(platform); // 발판을 리스트에 추가
+                platforms.Add(platform);
             }
         }
+    }
+
+    // 초기 타일 파괴 로직
+    private void DestroyInitialTiles()
+    {
+        List<GameObject> activePlatforms = new List<GameObject>(platforms);
+        for (int i = 0; i < initialTilesToDestroy && activePlatforms.Count > 0; i++)
+        {
+            int randomIndex = Random.Range(0, activePlatforms.Count);
+            GameObject selectedPlatform = activePlatforms[randomIndex];
+            activePlatforms.RemoveAt(randomIndex);
+
+            // 선택된 타일을 빨간색으로 변경 후 비활성화
+            Renderer renderer = selectedPlatform.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material.color = warningColor;
+            }
+
+            // 1초 후 발판 비활성화
+            StartCoroutine(DisablePlatformAfterDelay(selectedPlatform, 1f));
+        }
+    }
+
+    // 발판을 지연 후 비활성화하는 코루틴
+    private IEnumerator DisablePlatformAfterDelay(GameObject platform, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        platform.SetActive(false);
+    }
+
+    // 헥사 그리드 좌표를 월드 좌표로 변환 (열과 행에 따른 좌표 계산)
+    private Vector3 HexToWorldPosition(int col, int row, float width, float height)
+    {
+        // 홀수 열의 경우 Z축을 조금 내리기
+        float x = col * width * 0.75f;
+        float z = row * height + (col % 2 == 0 ? 0 : height / 2);
+
+        return new Vector3(x, 0, z);
     }
 
     // 플레이어를 중앙 발판에 배치
     private void PlacePlayerAtCenter()
     {
-        // 그리드 중앙 위치 계산
-        float centerX = (gridSize - 1) * adjustedSpacing / 2;
-        float centerZ = (gridSize - 1) * adjustedSpacing / 2;
-
-        Vector3 centerPosition = new Vector3(centerX, player.position.y, centerZ);
+        Vector3 centerPosition = HexToWorldPosition(columns / 2, rows / 2, (hexSize + hexSpacing) * 2, Mathf.Sqrt(3) * (hexSize + hexSpacing)); // 중앙 발판의 좌표 계산
         player.position = centerPosition;
     }
 
@@ -173,18 +226,13 @@ public class GridPlatformSpawner : MonoBehaviour
                 maxPlatformsToDestroy++;
             }
 
-            Debug.Log("난이도 증가: 발판 생명 시간 = " + currentPlatformLifetime + ", 동시에 파괴되는 발판 수 = " + maxPlatformsToDestroy);
+            Debug.Log("난이도 증가: 발판 지속 시간 = " + currentPlatformLifetime + ", 동시에 파괴되는 발판 수 = " + maxPlatformsToDestroy);
         }
     }
 }
 
 
 
-
-
-
-
-
-
+   
 
 
