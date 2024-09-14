@@ -1,57 +1,69 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody), typeof(Animator))]
+[RequireComponent(typeof(Rigidbody), typeof(Animator), typeof(AudioSource))]
 public class PenguinController : MonoBehaviour
 {
-    public float moveSpeed = 5f;       // 이동 속도
-    public float maxJumpForce = 10f;   // 최대 점프 힘
-    public float minJumpForce = 2f;    // 최소 점프 힘
-    public float jumpHoldTime = 0f;    // 스페이스바를 누른 시간
-    public AudioClip jumpSound;        // 점프 소리
-    private AudioSource audioSource;   // 오디오 소스
+    public float moveSpeed = 5f;        // 이동 속도
+    public float maxJumpForce = 10f;    // 최대 점프 힘
+    public float minJumpForce = 2f;     // 최소 점프 힘
+    public AudioClip jumpSound;         // 점프할 때 재생할 소리
 
     private Rigidbody rb;
     private Animator animator;
-    private bool isJumping = false;    // 점프 중인지 여부
-    private bool isGrounded = false;   // 땅에 있는지 여부
-    private bool jumpRequested = false; // 점프 요청 여부
-    private float jumpRequestTime = 0f; // 점프 요청 시간
-    public CameraFollow cameraFollow;
+    private AudioSource audioSource;    // 점프 사운드를 재생할 오디오 소스
+
+    private bool isGrounded = false;    // 플레이어가 땅에 있는지 여부
+    private bool jumpRequested = false; // 점프를 요청했는지 여부
+    private bool isJumping = false;     // 점프 중인지 여부
+
+    private float jumpHoldTime = 0f;    // 스페이스바를 누르고 있는 시간
+    private float jumpRequestTime = 0f; // 점프 요청 시점
+
+    public CameraFollow cameraFollow;   // 카메라 움직임을 처리하는 스크립트
 
     void Start()
     {
+        // 필수 컴포넌트 가져오기
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
-
-        // 오디오 소스 설정
         audioSource = GetComponent<AudioSource>();
 
+        // 리지드바디 설정: 회전을 잠그고 중력 영향 받기
         rb.isKinematic = false;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
     }
 
     void Update()
     {
-        // 방향키 입력을 받아 이동 속도 계산
+        HandleMovement();   // 이동 처리
+        HandleJump();       // 점프 처리
+    }
+
+    // 캐릭터 이동 처리
+    private void HandleMovement()
+    {
         float moveX = Input.GetAxis("Horizontal");
         float moveZ = Input.GetAxis("Vertical");
 
-        Vector3 move = new Vector3(moveX, 0, moveZ);
+        Vector3 moveDirection = new Vector3(moveX, 0, moveZ);
 
-        // 캐릭터가 이동하는 방향으로 회전
-        if (move.magnitude > 0.1f)
+        // 이동 중일 때 캐릭터를 이동 방향으로 회전시킴
+        if (moveDirection.magnitude > 0.1f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(move);
+            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
         }
 
-        // 이동 처리
-        rb.velocity = new Vector3(move.x * moveSpeed, rb.velocity.y, move.z * moveSpeed);
+        // 리지드바디를 통해 이동 처리
+        rb.velocity = new Vector3(moveDirection.x * moveSpeed, rb.velocity.y, moveDirection.z * moveSpeed);
 
-        // Animator의 Speed 파라미터에 이동 속도 전달
-        animator.SetFloat("moveSpeed", move.magnitude);
+        // 애니메이터의 이동 속도 업데이트
+        animator.SetFloat("moveSpeed", moveDirection.magnitude);
+    }
 
-        // 점프 요청 처리
+    // 점프 처리
+    private void HandleJump()
+    {
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             jumpRequested = true;
@@ -61,27 +73,29 @@ public class PenguinController : MonoBehaviour
 
         if (jumpRequested && isGrounded)
         {
-            // 점프 입력이 계속될 때 점프 힘을 증가
+            // 스페이스바를 누르고 있는 동안 점프 힘 계산
             if (Input.GetKey(KeyCode.Space))
             {
                 jumpHoldTime = Time.time - jumpRequestTime;
             }
             else
             {
-                // 스페이스바를 뗄 때 점프 실행
+                // 점프 실행: 눌렀던 시간에 따라 점프 힘 결정
                 float jumpForce = Mathf.Clamp(minJumpForce + (jumpHoldTime * maxJumpForce), minJumpForce, maxJumpForce);
                 rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
 
+                // 점프 애니메이션 처리
                 isJumping = true;
                 isGrounded = false;
                 animator.SetBool("isJumping", true);
 
-                // 점프할 때 소리 재생 (점프 시에만 소리)
-                if (audioSource != null && jumpSound != null)
+                // 점프 사운드 재생
+                if (jumpSound != null)
                 {
                     audioSource.PlayOneShot(jumpSound);
                 }
 
+                // 점프 관련 변수 초기화
                 jumpRequested = false;
                 jumpHoldTime = 0f;
                 cameraFollow.SetJumping(false);
@@ -89,11 +103,12 @@ public class PenguinController : MonoBehaviour
         }
     }
 
+    // 충돌 처리: 땅과 충돌 시 점프 상태 해제
     void OnCollisionEnter(Collision collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
         {
-            if (isJumping) // 점프 중에 땅과 충돌한 경우
+            if (isJumping)
             {
                 isJumping = false; // 점프가 끝났음을 나타냄
                 animator.SetBool("isJumping", false);

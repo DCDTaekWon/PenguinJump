@@ -176,6 +176,10 @@ PrefabInstance:
       value: Ground
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a6d06f0160e9c184fabf71984a877270, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: a6d06f0160e9c184fabf71984a877270, type: 3}
       propertyPath: m_TagString
       value: Ground
       objectReference: {fileID: 0}
@@ -461,7 +465,6 @@ MonoBehaviour:
   moveSpeed: 3
   maxJumpForce: 6
   minJumpForce: 2
-  jumpHoldTime: 0
   jumpSound: {fileID: 8300000, guid: b46df4a152b9a0e4a90a594f6eab4d21, type: 3}
   cameraFollow: {fileID: 1986519530}
 --- !u!54 &1578862124
@@ -623,14 +626,15 @@ MonoBehaviour:
   hexSpacing: 0.1
   platformScale: 1
   normalColor: {r: 1, g: 1, b: 1, a: 1}
-  initialPlatformLifetime: 5
+  hitColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  warningColor: {r: 1, g: 0, b: 0, a: 1}
+  initialPlatformLifetime: 3
   respawnDelay: 3
   difficultyIncreaseInterval: 10
-  minPlatformLifetime: 3
+  minPlatformLifetime: 1
   maxPlatformsToDestroy: 1
   maxPlatformDestroyLimit: 12
   initialTilesToDestroy: 3
-  warningColor: {r: 1, g: 0, b: 0, a: 1}
   player: {fileID: 1578862122}
 --- !u!4 &1892101277
 Transform:
@@ -767,6 +771,46 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2520459676734177793, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2520459676734177795, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2520459676734177797, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2520459676734177809, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2520459676734177811, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2520459676734177813, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2520459676734177815, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2520459676734177821, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2520459676734177823, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3584599818602931112, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 3584599818602931115, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
       propertyPath: m_BlendShapeWeights.Array.size
       value: 29
@@ -775,17 +819,33 @@ PrefabInstance:
       propertyPath: m_BlendShapeWeights.Array.size
       value: 29
       objectReference: {fileID: 0}
+    - target: {fileID: 3584599818706254737, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 3584599819192227522, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
       propertyPath: m_BlendShapeWeights.Array.size
       value: 29
+      objectReference: {fileID: 0}
+    - target: {fileID: 3584599819192227523, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3584599819398561754, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
       propertyPath: m_BlendShapeWeights.Array.size
       value: 29
       objectReference: {fileID: 0}
+    - target: {fileID: 3584599819398561755, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 3584599820630843841, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
       propertyPath: m_Name
       value: Penguin
+      objectReference: {fileID: 0}
+    - target: {fileID: 3584599820630843841, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     - target: {fileID: 3584599820630843841, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
       propertyPath: m_TagString
@@ -801,7 +861,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3584599820630843869, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3584599820630843869, guid: add5ab1cca4ee994d9f396d44d51bc66, type: 3}
       propertyPath: m_LocalPosition.z
