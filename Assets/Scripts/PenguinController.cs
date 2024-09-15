@@ -35,18 +35,12 @@ public class PenguinController : MonoBehaviour
 
     void Update()
     {
-        HandleMovement();   // 이동 처리
-        HandleJump();       // 점프 처리
+        HandleMovement();   
+        HandleJump();   
 
-        // **Y축 회전값 고정**: 불필요한 회전 방지
-        Vector3 rotation = transform.eulerAngles;
-        rotation.y = Mathf.Clamp(rotation.y, 0f, 360f); // 회전값이 360도를 넘지 않도록 고정
-        transform.eulerAngles = rotation;
-
-        // **불필요한 각속도 제거 (회전 방지)**
+        // 불필요한 회전 제거
         rb.angularVelocity = Vector3.zero;
     }
-
 
     // 캐릭터 이동 처리
     private void HandleMovement()
@@ -76,42 +70,26 @@ public class PenguinController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             jumpRequested = true;
-            jumpRequestTime = Time.time; // 점프 요청 시간 기록
-            cameraFollow.SetJumping(true);  // 카메라 점프 모드 활성화
+            jumpRequestTime = Time.time;
+            cameraFollow.SetJumping(true);
         }
 
-        if (jumpRequested && isGrounded)
+        if (jumpRequested && Input.GetKey(KeyCode.Space))
         {
-            // 스페이스바를 누르고 있는 동안 점프 힘 계산
-            if (Input.GetKey(KeyCode.Space))
-            {
-                jumpHoldTime = Time.time - jumpRequestTime;
-            }
-            else
-            {
-                // 점프 실행: 눌렀던 시간에 따라 점프 힘 결정
-                float jumpForce = Mathf.Clamp(minJumpForce + (jumpHoldTime * maxJumpForce), minJumpForce, maxJumpForce);
-                rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-
-                // **불필요한 각속도 제거 (회전 방지)**
-                rb.angularVelocity = Vector3.zero;
-
-                // 점프 애니메이션 처리
-                isJumping = true;
-                isGrounded = false;
-                animator.SetBool("isJumping", true);
-
-                // 점프 사운드 재생
-                if (jumpSound != null)
-                {
-                    audioSource.PlayOneShot(jumpSound);
-                }
-
-                // 점프 관련 변수 초기화
-                jumpRequested = false;
-                jumpHoldTime = 0f;
-                cameraFollow.SetJumping(false);  // 카메라 점프 모드 해제
-            }
+            jumpHoldTime = Time.time - jumpRequestTime;
+        }
+        else if (jumpRequested && !Input.GetKey(KeyCode.Space))
+        {
+            float jumpForce = Mathf.Clamp(minJumpForce + (jumpHoldTime * maxJumpForce), minJumpForce, maxJumpForce);
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            
+            jumpRequested = false;
+            isGrounded = false;
+            jumpHoldTime = 0f;
+            isJumping = true;
+            animator.SetBool("isJumping", true);
+            audioSource.PlayOneShot(jumpSound);
+            cameraFollow.SetJumping(false);
         }
     }
 

@@ -76,26 +76,17 @@ public class HexGridPlatformSpawner : MonoBehaviour
     // 발판 충돌 감지를 Update에서 처리
     private void CheckPlatformCollision()
     {
+        Collider playerCollider = player.GetComponent<Collider>();
+        
         foreach (PlatformInfo platformInfo in platformInfos)
         {
             if (platformInfo.platform.activeSelf && platformInfo.state == PlatformState.Normal)
             {
-                // 플레이어와 발판 간의 충돌 감지
-                Collider playerCollider = player.GetComponent<Collider>();
                 Collider platformCollider = platformInfo.platform.GetComponent<Collider>();
 
-                if (playerCollider != null && platformCollider != null)
+                if (playerCollider.bounds.Intersects(platformCollider.bounds))
                 {
-                    // PenguinLayer와 GroundLayer 충돌 여부 확인
-                    if (playerCollider.gameObject.layer == LayerMask.NameToLayer("PenguinLayer") &&
-                        platformCollider.gameObject.layer == LayerMask.NameToLayer("GroundLayer"))
-                    {
-                        // 두 객체가 충돌할 경우 OnPlatformHit 호출
-                        if (playerCollider.bounds.Intersects(platformCollider.bounds))
-                        {
-                            OnPlatformHit(platformInfo.platform);
-                        }
-                    }
+                    OnPlatformHit(platformInfo.platform);
                 }
             }
         }
@@ -283,6 +274,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
         }
     }
 }
+
 
 
 

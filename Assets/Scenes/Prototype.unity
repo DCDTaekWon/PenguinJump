@@ -813,11 +813,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 1578862122}
   offset: {x: 0, y: 3, z: -4}
-  smoothSpeed: 0.01
-  jumpHeightOffset: 2
+  smoothSpeed: 0.125
+  jumpOffsetMultiplier: {x: 1, y: 1.5, z: 1}
   jumpSmoothSpeed: 0.02
-  zoomOutDistance: 8
   maxZoomOutDistance: 5
+  minZoomOutDistance: 1
+  maxJumpHeight: 10
 --- !u!1001 &2138685012
 PrefabInstance:
   m_ObjectHideFlags: 0
