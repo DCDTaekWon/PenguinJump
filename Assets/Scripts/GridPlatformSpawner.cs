@@ -19,7 +19,8 @@ public class HexGridPlatformSpawner : MonoBehaviour
     // 난이도 및 시간 설정
     [Header("Difficulty and Timing")]
     public float initialPlatformLifetime = 3f;
-    public float respawnDelay = 3f;
+    public float respawnDelay = 3f;  // 발판이 사라진 후 재생성되는 시간
+    public float warningDuration = 1f;  // 경고 상태 유지 시간
     public float difficultyIncreaseInterval = 10f;
     public float minPlatformLifetime = 1f;
     public int maxPlatformsToDestroy = 1;
@@ -67,6 +68,39 @@ public class HexGridPlatformSpawner : MonoBehaviour
         StartCoroutine(PlatformLifecycle());
     }
 
+    private void Update()
+    {
+        CheckPlatformCollision();
+    }
+
+    // 발판 충돌 감지를 Update에서 처리
+    private void CheckPlatformCollision()
+    {
+        foreach (PlatformInfo platformInfo in platformInfos)
+        {
+            if (platformInfo.platform.activeSelf && platformInfo.state == PlatformState.Normal)
+            {
+                // 플레이어와 발판 간의 충돌 감지
+                Collider playerCollider = player.GetComponent<Collider>();
+                Collider platformCollider = platformInfo.platform.GetComponent<Collider>();
+
+                if (playerCollider != null && platformCollider != null)
+                {
+                    // PenguinLayer와 GroundLayer 충돌 여부 확인
+                    if (playerCollider.gameObject.layer == LayerMask.NameToLayer("PenguinLayer") &&
+                        platformCollider.gameObject.layer == LayerMask.NameToLayer("GroundLayer"))
+                    {
+                        // 두 객체가 충돌할 경우 OnPlatformHit 호출
+                        if (playerCollider.bounds.Intersects(platformCollider.bounds))
+                        {
+                            OnPlatformHit(platformInfo.platform);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private void SpawnHexagonalPlatforms()
     {
         float width = (hexSize + hexSpacing) * 2;
@@ -109,7 +143,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
             }
 
             selectedPlatformInfo.state = PlatformState.Warning; // 경고 상태로 설정
-            StartCoroutine(DisablePlatformAfterDelay(selectedPlatformInfo.platform, 1f));
+            StartCoroutine(DisablePlatformAfterDelay(selectedPlatformInfo.platform, warningDuration));
 
             Debug.Log("초기 파괴 발판 선택 및 경고 색상 변경: " + selectedPlatformInfo.platform.name);
         }
@@ -136,15 +170,6 @@ public class HexGridPlatformSpawner : MonoBehaviour
         Debug.Log("플레이어 중앙 배치 완료");
     }
 
-    private void OnCollisionEnter(Collision other)
-    {
-        if (other.gameObject.layer == LayerMask.NameToLayer("GroundLayer"))
-        {
-            Debug.Log("플레이어가 발판에 충돌: " + other.gameObject.name);
-            OnPlatformHit(other.gameObject);
-        }
-    }
-
     public void OnPlatformHit(GameObject platform)
     {
         PlatformInfo platformInfo = platformInfos.Find(p => p.platform == platform);
@@ -165,16 +190,17 @@ public class HexGridPlatformSpawner : MonoBehaviour
                     platformInfo.renderer.material.color = hitColor; // 색상 변경
                     Debug.Log("플랫폼 밟힘 및 색상 변경: " + platform.name);
                 }
-                StartCoroutine(DestroyPlatformAfterDelay(platformInfo));
+                StartCoroutine(DestroyPlatformAfterDelay(platformInfo.platform, 2f));
+                StartCoroutine(RespawnPlatform(platformInfo)); // 발판 재생성
             }
         }
     }
 
-    private IEnumerator DestroyPlatformAfterDelay(PlatformInfo platformInfo)
+    private IEnumerator DestroyPlatformAfterDelay(GameObject platform, float delay)
     {
-        yield return new WaitForSeconds(2f);
-        platformInfo.platform.SetActive(false);
-        Debug.Log("밟힌 발판 파괴: " + platformInfo.platform.name);
+        yield return new WaitForSeconds(delay);
+        platform.SetActive(false);
+        Debug.Log("밟힌 발판 파괴: " + platform.name);
     }
 
     private IEnumerator PlatformLifecycle()
@@ -217,13 +243,13 @@ public class HexGridPlatformSpawner : MonoBehaviour
                 Debug.Log("플랫폼 경고 상태 변경: " + selectedPlatform.platform.name);
             }
 
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(warningDuration);
 
             foreach (PlatformInfo platformInfo in platformsToChangeColor)
             {
                 platformInfo.platform.SetActive(false);
                 Debug.Log("경고 발판 파괴: " + platformInfo.platform.name);
-                StartCoroutine(RespawnPlatform(platformInfo));
+                StartCoroutine(RespawnPlatform(platformInfo)); // 발판 재생성 로직 추가
             }
         }
     }
@@ -257,5 +283,10 @@ public class HexGridPlatformSpawner : MonoBehaviour
         }
     }
 }
+
+
+
+
+
 
 
