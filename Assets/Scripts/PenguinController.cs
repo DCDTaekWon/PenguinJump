@@ -28,7 +28,7 @@ public class PenguinController : MonoBehaviour
         animator = GetComponent<Animator>();
         audioSource = GetComponent<AudioSource>();
 
-        // 리지드바디 설정: 회전을 잠그고 중력 영향 받기
+        // 리지드바디 설정: X, Z축 회전을 잠그고 중력 영향 받기
         rb.isKinematic = false;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
     }
@@ -37,7 +37,16 @@ public class PenguinController : MonoBehaviour
     {
         HandleMovement();   // 이동 처리
         HandleJump();       // 점프 처리
+
+        // **Y축 회전값 고정**: 불필요한 회전 방지
+        Vector3 rotation = transform.eulerAngles;
+        rotation.y = Mathf.Clamp(rotation.y, 0f, 360f); // 회전값이 360도를 넘지 않도록 고정
+        transform.eulerAngles = rotation;
+
+        // **불필요한 각속도 제거 (회전 방지)**
+        rb.angularVelocity = Vector3.zero;
     }
+
 
     // 캐릭터 이동 처리
     private void HandleMovement()
@@ -47,7 +56,7 @@ public class PenguinController : MonoBehaviour
 
         Vector3 moveDirection = new Vector3(moveX, 0, moveZ);
 
-        // 이동 중일 때 캐릭터를 이동 방향으로 회전시킴
+        // 움직임이 충분히 클 때만 회전
         if (moveDirection.magnitude > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
@@ -68,7 +77,7 @@ public class PenguinController : MonoBehaviour
         {
             jumpRequested = true;
             jumpRequestTime = Time.time; // 점프 요청 시간 기록
-            cameraFollow.SetJumping(true);
+            cameraFollow.SetJumping(true);  // 카메라 점프 모드 활성화
         }
 
         if (jumpRequested && isGrounded)
@@ -84,6 +93,9 @@ public class PenguinController : MonoBehaviour
                 float jumpForce = Mathf.Clamp(minJumpForce + (jumpHoldTime * maxJumpForce), minJumpForce, maxJumpForce);
                 rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
 
+                // **불필요한 각속도 제거 (회전 방지)**
+                rb.angularVelocity = Vector3.zero;
+
                 // 점프 애니메이션 처리
                 isJumping = true;
                 isGrounded = false;
@@ -98,7 +110,7 @@ public class PenguinController : MonoBehaviour
                 // 점프 관련 변수 초기화
                 jumpRequested = false;
                 jumpHoldTime = 0f;
-                cameraFollow.SetJumping(false);
+                cameraFollow.SetJumping(false);  // 카메라 점프 모드 해제
             }
         }
     }
@@ -117,3 +129,5 @@ public class PenguinController : MonoBehaviour
         }
     }
 }
+
+
