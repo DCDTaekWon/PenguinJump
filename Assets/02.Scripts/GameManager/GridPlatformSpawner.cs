@@ -16,6 +16,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
     public Color hitColor = Color.yellow; // 밟았을 때 색상
     public Color warningColor = Color.red;
     public Material IceMaterial;  // Inspector에서 연결할 IceMaterial
+    public Vector3 platformRotation = Vector3.zero;  // 회전 각도 (Inspector에서 설정 가능)
 
     // 난이도 및 시간 설정
     [Header("Difficulty and Timing")]
@@ -78,7 +79,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
     private void CheckPlatformCollision()
     {
         Collider playerCollider = player.GetComponent<Collider>();
-        
+
         foreach (PlatformInfo platformInfo in platformInfos)
         {
             if (platformInfo.platform.activeSelf && platformInfo.state == PlatformState.Normal)
@@ -103,7 +104,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
             for (int col = 0; col < columns; col++)
             {
                 Vector3 spawnPosition = HexToWorldPosition(col, row, width, height);
-                GameObject platform = Instantiate(platformPrefab, spawnPosition, Quaternion.identity);
+                GameObject platform = Instantiate(platformPrefab, spawnPosition, Quaternion.Euler(platformRotation));  // 회전 적용
                 platform.transform.localScale = new Vector3(platformScale, 0.1f, platformScale);
 
                 MeshRenderer renderer = platform.GetComponent<MeshRenderer>();
@@ -114,7 +115,6 @@ public class HexGridPlatformSpawner : MonoBehaviour
 
                 platform.layer = LayerMask.NameToLayer("GroundLayer"); // 발판 레이어 설정
                 platformInfos.Add(new PlatformInfo(platform, renderer));
-
             }
         }
 
@@ -246,6 +246,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
             }
         }
     }
+
     private IEnumerator RespawnPlatform(PlatformInfo platformInfo)
     {
         yield return new WaitForSeconds(respawnDelay);
@@ -253,16 +254,17 @@ public class HexGridPlatformSpawner : MonoBehaviour
         platformInfo.renderer.material.color = normalColor; // 정상 상태의 색상 복구
         platformInfo.state = PlatformState.Normal; // 상태 복구
 
-        // 발판의 MeshRenderer에 IceMaterial을 다시 적용
+        // 발판의 MeshRenderer에 IceMaterial을 다시 적용하고 회전도 복구
         MeshRenderer renderer = platformInfo.platform.GetComponent<MeshRenderer>();
         if (renderer != null)
         {
             renderer.material = IceMaterial;  // IceMaterial을 발판에 적용
         }
 
+        platformInfo.platform.transform.rotation = Quaternion.Euler(platformRotation); // 회전 복구
+
         Debug.Log("발판 재생성: " + platformInfo.platform.name);
     }
-
 
     private IEnumerator IncreaseDifficulty()
     {
@@ -284,6 +286,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
         }
     }
 }
+
 
 
 
