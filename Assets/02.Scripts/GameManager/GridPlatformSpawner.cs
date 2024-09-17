@@ -15,6 +15,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
     public Color normalColor = Color.white;
     public Color hitColor = Color.yellow; // 밟았을 때 색상
     public Color warningColor = Color.red;
+    public Material IceMaterial;  // Inspector에서 연결할 IceMaterial
 
     // 난이도 및 시간 설정
     [Header("Difficulty and Timing")]
@@ -105,14 +106,15 @@ public class HexGridPlatformSpawner : MonoBehaviour
                 GameObject platform = Instantiate(platformPrefab, spawnPosition, Quaternion.identity);
                 platform.transform.localScale = new Vector3(platformScale, 0.1f, platformScale);
 
-                Renderer renderer = platform.GetComponent<Renderer>();
+                MeshRenderer renderer = platform.GetComponent<MeshRenderer>();
                 if (renderer != null)
                 {
-                    renderer.material.color = normalColor;
+                    renderer.material = IceMaterial;  // IceMaterial을 발판에 적용
                 }
 
                 platform.layer = LayerMask.NameToLayer("GroundLayer"); // 발판 레이어 설정
                 platformInfos.Add(new PlatformInfo(platform, renderer));
+
             }
         }
 
@@ -244,15 +246,23 @@ public class HexGridPlatformSpawner : MonoBehaviour
             }
         }
     }
-
     private IEnumerator RespawnPlatform(PlatformInfo platformInfo)
     {
         yield return new WaitForSeconds(respawnDelay);
         platformInfo.platform.SetActive(true);
-        platformInfo.renderer.material.color = normalColor;
+        platformInfo.renderer.material.color = normalColor; // 정상 상태의 색상 복구
         platformInfo.state = PlatformState.Normal; // 상태 복구
+
+        // 발판의 MeshRenderer에 IceMaterial을 다시 적용
+        MeshRenderer renderer = platformInfo.platform.GetComponent<MeshRenderer>();
+        if (renderer != null)
+        {
+            renderer.material = IceMaterial;  // IceMaterial을 발판에 적용
+        }
+
         Debug.Log("발판 재생성: " + platformInfo.platform.name);
     }
+
 
     private IEnumerator IncreaseDifficulty()
     {
