@@ -31,12 +31,15 @@ public class PenguinController : MonoBehaviour
         // 리지드바디 설정: X, Z축 회전을 잠그고 중력 영향 받기
         rb.isKinematic = false;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
+        // 충돌 감지 모드 설정 (연속 충돌 감지)
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
     }
 
-    void Update()
+    void FixedUpdate()
     {
-        HandleMovement();   
-        HandleJump();   
+        HandleMovement();
+        HandleJump();
 
         // 불필요한 회전 제거
         rb.angularVelocity = Vector3.zero;
@@ -82,7 +85,7 @@ public class PenguinController : MonoBehaviour
         {
             float jumpForce = Mathf.Clamp(minJumpForce + (jumpHoldTime * maxJumpForce), minJumpForce, maxJumpForce);
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            
+
             jumpRequested = false;
             isGrounded = false;
             jumpHoldTime = 0f;

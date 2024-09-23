@@ -70,7 +70,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
         StartCoroutine(PlatformLifecycle());
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         CheckPlatformCollision();
     }
