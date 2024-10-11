@@ -595,8 +595,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   platformPrefab: {fileID: 7266782}
-  rows: 10
-  columns: 10
+  rows: 6
+  columns: 6
   hexSize: 1
   hexSpacing: -0.4
   platformScale: 1
@@ -611,8 +611,8 @@ MonoBehaviour:
   difficultyIncreaseInterval: 10
   minPlatformLifetime: 1
   maxPlatformsToDestroy: 1
-  maxPlatformDestroyLimit: 12
-  initialTilesToDestroy: 3
+  maxPlatformDestroyLimit: 35
+  initialTilesToDestroy: 30
   player: {fileID: 1578862122}
 --- !u!4 &1892101277
 Transform:
