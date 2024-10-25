@@ -4,43 +4,43 @@ using System.Collections.Generic;
 
 public class HexGridPlatformSpawner : MonoBehaviour
 {
-    // 타일 설정
     [Header("Tile Settings")]
     public GameObject platformPrefab;
     public int rows = 5;
     public int columns = 5;
     public float hexSize = 1.0f;
+    public float platformThickness = 3.0f;
     public float hexSpacing = 0.1f;
     public float platformScale = 1.0f;
     public Color normalColor = Color.white;
-    public Color hitColor = Color.yellow; // 밟았을 때 색상
+    public Color hitColor = Color.yellow;
     public Color warningColor = Color.red;
-    public Material IceMaterial;  // Inspector에서 연결할 IceMaterial
-    public Vector3 platformRotation = Vector3.zero;  // 회전 각도 (Inspector에서 설정 가능)
+    public Material IceMaterial;
+    public Vector3 platformRotation = Vector3.zero;
 
-    // 난이도 및 시간 설정
     [Header("Difficulty and Timing")]
     public float initialPlatformLifetime = 3f;
-    public float respawnDelay = 3f;  // 발판이 사라진 후 재생성되는 시간
-    public float warningDuration = 1f;  // 경고 상태 유지 시간
+    public float respawnDelay = 3f;
+    public float warningDuration = 1f;
+    public float activationInterval = 2f;  // 랜덤 발판 활성화 주기
     public float difficultyIncreaseInterval = 10f;
     public float minPlatformLifetime = 1f;
     public int maxPlatformsToDestroy = 1;
     public int maxPlatformDestroyLimit = 12;
-    public int initialTilesToDestroy = 3;
+    public int maxActivePlatforms = 5; // 동시에 활성화될 최대 발판 수
 
-    // 플레이어 설정
     [Header("Player Settings")]
     public Transform player;
 
-    private List<GameObject> platforms = new List<GameObject>();
+    private List<PlatformInfo> platformInfos = new List<PlatformInfo>();
     private float currentPlatformLifetime;
 
     private enum PlatformState
     {
         Normal,
-        Hit,        // 밟힌 상태
-        Warning     // 경고 상태
+        Hit,
+        Warning,
+        Break
     }
 
     private class PlatformInfo
@@ -53,45 +53,19 @@ public class HexGridPlatformSpawner : MonoBehaviour
         {
             this.platform = platform;
             this.renderer = renderer;
-            this.state = PlatformState.Normal; // 초기 상태는 Normal
+            this.state = PlatformState.Break; // 처음엔 Break 상태로 설정
         }
     }
-
-    private List<PlatformInfo> platformInfos = new List<PlatformInfo>();
 
     private void Start()
     {
-        Debug.Log("게임 시작 - 발판 생성 및 초기 설정");
         SpawnHexagonalPlatforms();
-        PlacePlayerAtCenter();
         currentPlatformLifetime = initialPlatformLifetime;
-        DestroyInitialTiles();
+
+        ActivateInitialPlatforms(); // 게임 시작 시 즉시 발판 활성화
+        StartCoroutine(ActivateRandomPlatforms()); // 일정 주기로 발판 활성화
         StartCoroutine(IncreaseDifficulty());
         StartCoroutine(PlatformLifecycle());
-    }
-
-    private void FixedUpdate()
-    {
-        CheckPlatformCollision();
-    }
-
-    // 발판 충돌 감지를 Update에서 처리
-    private void CheckPlatformCollision()
-    {
-        Collider playerCollider = player.GetComponent<Collider>();
-
-        foreach (PlatformInfo platformInfo in platformInfos)
-        {
-            if (platformInfo.platform.activeSelf && platformInfo.state == PlatformState.Normal)
-            {
-                Collider platformCollider = platformInfo.platform.GetComponent<Collider>();
-
-                if (playerCollider.bounds.Intersects(platformCollider.bounds))
-                {
-                    OnPlatformHit(platformInfo.platform);
-                }
-            }
-        }
     }
 
     private void SpawnHexagonalPlatforms()
@@ -104,96 +78,69 @@ public class HexGridPlatformSpawner : MonoBehaviour
             for (int col = 0; col < columns; col++)
             {
                 Vector3 spawnPosition = HexToWorldPosition(col, row, width, height);
-                GameObject platform = Instantiate(platformPrefab, spawnPosition, Quaternion.Euler(platformRotation));  // 회전 적용
-                platform.transform.localScale = new Vector3(platformScale, 0.1f, platformScale);
+                GameObject platform = Instantiate(platformPrefab, spawnPosition, Quaternion.Euler(platformRotation));
+                platform.transform.localScale = new Vector3(platformScale, platformThickness, platformScale);
 
+                // IceMaterial 적용
                 MeshRenderer renderer = platform.GetComponent<MeshRenderer>();
                 if (renderer != null)
                 {
-                    renderer.material = IceMaterial;  // IceMaterial을 발판에 적용
+                    renderer.material = IceMaterial;
                 }
 
-                platform.layer = LayerMask.NameToLayer("GroundLayer"); // 발판 레이어 설정
+                platform.layer = LayerMask.NameToLayer("GroundLayer");
                 platformInfos.Add(new PlatformInfo(platform, renderer));
+
+                // 처음 생성된 발판을 Break 상태로 비활성화
+                platform.SetActive(false);
             }
         }
 
         Debug.Log("발판 생성 완료: 총 발판 수 = " + platformInfos.Count);
     }
 
-    private void DestroyInitialTiles()
+    private void ActivateInitialPlatforms()
     {
-        List<PlatformInfo> activePlatforms = new List<PlatformInfo>(platformInfos);
-        for (int i = 0; i < initialTilesToDestroy && activePlatforms.Count > 0; i++)
+        List<PlatformInfo> breakPlatforms = platformInfos.FindAll(p => p.state == PlatformState.Break);
+        int platformsToActivate = Mathf.Min(maxActivePlatforms, breakPlatforms.Count);
+
+        for (int i = 0; i < platformsToActivate; i++)
         {
-            int randomIndex = Random.Range(0, activePlatforms.Count);
-            PlatformInfo selectedPlatformInfo = activePlatforms[randomIndex];
-            activePlatforms.RemoveAt(randomIndex);
+            PlatformInfo platformInfo = breakPlatforms[Random.Range(0, breakPlatforms.Count)];
+            platformInfo.platform.SetActive(true);
+            platformInfo.renderer.material.color = normalColor;
+            platformInfo.state = PlatformState.Normal;
+            breakPlatforms.Remove(platformInfo);
 
-            if (selectedPlatformInfo.renderer != null)
-            {
-                selectedPlatformInfo.renderer.material.color = warningColor;
-            }
-
-            selectedPlatformInfo.state = PlatformState.Warning; // 경고 상태로 설정
-            StartCoroutine(DisablePlatformAfterDelay(selectedPlatformInfo.platform, warningDuration));
-
-            Debug.Log("초기 파괴 발판 선택 및 경고 색상 변경: " + selectedPlatformInfo.platform.name);
+            Debug.Log("초기 활성화된 발판: " + platformInfo.platform.name);
         }
     }
 
-    private IEnumerator DisablePlatformAfterDelay(GameObject platform, float delay)
+    private IEnumerator ActivateRandomPlatforms()
     {
-        yield return new WaitForSeconds(delay);
-        platform.SetActive(false);
-        Debug.Log("발판 파괴: " + platform.name);
-    }
-
-    private Vector3 HexToWorldPosition(int col, int row, float width, float height)
-    {
-        float x = col * width * 0.75f;
-        float z = row * height + (col % 2 == 0 ? 0 : height / 2);
-        return new Vector3(x, 0, z);
-    }
-
-    private void PlacePlayerAtCenter()
-    {
-        Vector3 centerPosition = HexToWorldPosition(columns / 2, rows / 2, (hexSize + hexSpacing) * 2, Mathf.Sqrt(3) * (hexSize + hexSpacing));
-        player.position = centerPosition;
-        Debug.Log("플레이어 중앙 배치 완료");
-    }
-
-    public void OnPlatformHit(GameObject platform)
-    {
-        PlatformInfo platformInfo = platformInfos.Find(p => p.platform == platform);
-
-        if (platformInfo != null)
+        while (true)
         {
-            if (platformInfo.state == PlatformState.Warning)
-            {
-                Debug.Log("경고 상태 발판: 기존 로직 유지 (" + platform.name + ")");
-                return;
-            }
+            yield return new WaitForSeconds(activationInterval);
 
-            if (platformInfo.state == PlatformState.Normal)
+            // 현재 활성화된 발판 수 체크
+            int currentlyActiveCount = platformInfos.FindAll(p => p.state == PlatformState.Normal).Count;
+            int platformsToActivate = Mathf.Min(maxActivePlatforms - currentlyActiveCount, platformInfos.Count);
+
+            // Break 상태의 발판 중 일부를 활성화
+            List<PlatformInfo> breakPlatforms = platformInfos.FindAll(p => p.state == PlatformState.Break);
+            platformsToActivate = Mathf.Min(breakPlatforms.Count, platformsToActivate);
+
+            for (int i = 0; i < platformsToActivate; i++)
             {
-                platformInfo.state = PlatformState.Hit; // 상태를 Hit로 변경
-                if (platformInfo.renderer != null)
-                {
-                    platformInfo.renderer.material.color = hitColor; // 색상 변경
-                    Debug.Log("플랫폼 밟힘 및 색상 변경: " + platform.name);
-                }
-                StartCoroutine(DestroyPlatformAfterDelay(platformInfo.platform, 2f));
-                StartCoroutine(RespawnPlatform(platformInfo)); // 발판 재생성
+                PlatformInfo platformInfo = breakPlatforms[Random.Range(0, breakPlatforms.Count)];
+                platformInfo.platform.SetActive(true);
+                platformInfo.renderer.material.color = normalColor;
+                platformInfo.state = PlatformState.Normal;
+                breakPlatforms.Remove(platformInfo);
+
+                Debug.Log("랜덤 활성화된 발판: " + platformInfo.platform.name);
             }
         }
-    }
-
-    private IEnumerator DestroyPlatformAfterDelay(GameObject platform, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        platform.SetActive(false);
-        Debug.Log("밟힌 발판 파괴: " + platform.name);
     }
 
     private IEnumerator PlatformLifecycle()
@@ -201,69 +148,37 @@ public class HexGridPlatformSpawner : MonoBehaviour
         while (true)
         {
             yield return new WaitForSeconds(currentPlatformLifetime);
-            int platformsToDestroy = Mathf.Min(maxPlatformsToDestroy, platformInfos.Count);
 
-            List<PlatformInfo> activePlatforms = new List<PlatformInfo>();
-            foreach (PlatformInfo platformInfo in platformInfos)
-            {
-                if (platformInfo.platform.activeSelf && platformInfo.state != PlatformState.Hit)
-                {
-                    activePlatforms.Add(platformInfo);
-                }
-            }
+            // 활성화된 발판을 대상으로 Warning 상태로 변경 후 파괴
+            List<PlatformInfo> activePlatforms = platformInfos.FindAll(p => p.state == PlatformState.Normal);
+            int platformsToDestroy = Mathf.Min(maxPlatformsToDestroy, activePlatforms.Count);
 
-            platformsToDestroy = Mathf.Min(platformsToDestroy, activePlatforms.Count);
-            List<PlatformInfo> platformsToChangeColor = new List<PlatformInfo>();
             for (int i = 0; i < platformsToDestroy; i++)
             {
-                int randomIndex;
-                PlatformInfo selectedPlatform;
+                PlatformInfo platformInfo = activePlatforms[Random.Range(0, activePlatforms.Count)];
+                platformInfo.renderer.material.color = warningColor;
+                platformInfo.state = PlatformState.Warning;
+                Debug.Log("발판 Warning 상태로 변경: " + platformInfo.platform.name);
+                activePlatforms.Remove(platformInfo);
 
-                do
-                {
-                    randomIndex = Random.Range(0, activePlatforms.Count);
-                    selectedPlatform = activePlatforms[randomIndex];
-                } while (platformsToChangeColor.Contains(selectedPlatform));
-
-                platformsToChangeColor.Add(selectedPlatform);
-
-                if (selectedPlatform.renderer != null)
-                {
-                    selectedPlatform.renderer.material.color = warningColor;
-                }
-
-                selectedPlatform.state = PlatformState.Warning; // 상태를 Warning으로 변경
-                Debug.Log("플랫폼 경고 상태 변경: " + selectedPlatform.platform.name);
-            }
-
-            yield return new WaitForSeconds(warningDuration);
-
-            foreach (PlatformInfo platformInfo in platformsToChangeColor)
-            {
-                platformInfo.platform.SetActive(false);
-                Debug.Log("경고 발판 파괴: " + platformInfo.platform.name);
-                StartCoroutine(RespawnPlatform(platformInfo)); // 발판 재생성 로직 추가
+                StartCoroutine(DisableAndRespawnPlatform(platformInfo));
             }
         }
     }
 
-    private IEnumerator RespawnPlatform(PlatformInfo platformInfo)
+    private IEnumerator DisableAndRespawnPlatform(PlatformInfo platformInfo)
     {
-        yield return new WaitForSeconds(respawnDelay);
-        platformInfo.platform.SetActive(true);
-        platformInfo.renderer.material.color = normalColor; // 정상 상태의 색상 복구
-        platformInfo.state = PlatformState.Normal; // 상태 복구
+        yield return new WaitForSeconds(warningDuration);
+        platformInfo.platform.SetActive(false);
+        platformInfo.state = PlatformState.Break;
+        Debug.Log("발판 비활성화 및 Break 상태로 전환: " + platformInfo.platform.name);
+    }
 
-        // 발판의 MeshRenderer에 IceMaterial을 다시 적용하고 회전도 복구
-        MeshRenderer renderer = platformInfo.platform.GetComponent<MeshRenderer>();
-        if (renderer != null)
-        {
-            renderer.material = IceMaterial;  // IceMaterial을 발판에 적용
-        }
-
-        platformInfo.platform.transform.rotation = Quaternion.Euler(platformRotation); // 회전 복구
-
-        Debug.Log("발판 재생성: " + platformInfo.platform.name);
+    private Vector3 HexToWorldPosition(int col, int row, float width, float height)
+    {
+        float x = col * width * 0.75f;
+        float z = row * height + (col % 2 == 0 ? 0 : height / 2);
+        return new Vector3(x, 0, z);
     }
 
     private IEnumerator IncreaseDifficulty()
@@ -286,12 +201,3 @@ public class HexGridPlatformSpawner : MonoBehaviour
         }
     }
 }
-
-
-
-
-
-
-
-
-
