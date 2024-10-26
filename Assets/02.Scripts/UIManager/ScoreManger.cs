@@ -1,28 +1,73 @@
-using TMPro;
 using UnityEngine;
+using TMPro;
+using System;
 
-public class ScoreManager : MonoBehaviour
+public class SecureScoreManager : MonoBehaviour
 {
-    public TMP_Text scoreText;  // 점수를 표시할 UI 텍스트
-    private float score = 0f;  // 스코어 값을 float으로 설정
-    public float scoreIncreaseRate = 10f;  // 초당 스코어가 오르는 양
+    public TMP_Text scoreText;
+    public TMP_Text highScoreText;
 
-    private int displayedScore = 0;  // 화면에 표시할 스코어 값
+    private float score = 0f;
+    public float scoreIncreaseRate = 10f;
+
+    private int displayedScore = 0;
+    private int highScore = 0;
+
+    public int CurrentScore => displayedScore; // 현재 점수를 반환하는 프로퍼티 추가
+
+    void Start()
+    {
+        highScore = LoadHighScore();
+        UpdateHighScoreText();
+    }
 
     void Update()
     {
-        // 시간에 따라 스코어 증가
         score += scoreIncreaseRate * Time.deltaTime;
-
-        // 현재 스코어와 화면에 표시된 스코어 비교
         int newScore = Mathf.FloorToInt(score / 10) * 10;
 
         if (newScore != displayedScore)
         {
-            // 스코어 갱신
             displayedScore = newScore;
             scoreText.text = "Score: " + displayedScore.ToString();
+
+            if (displayedScore > highScore)
+            {
+                highScore = displayedScore;
+                UpdateHighScoreText();
+                SaveHighScore(highScore);
+            }
         }
     }
-}
 
+    private void UpdateHighScoreText()
+    {
+        highScoreText.text = "High Score: " + highScore.ToString();
+    }
+
+    private void SaveHighScore(int score)
+    {
+        string encryptedScore = Convert.ToBase64String(BitConverter.GetBytes(score));
+        PlayerPrefs.SetString("HighScore", encryptedScore);
+        PlayerPrefs.Save();
+    }
+
+    private int LoadHighScore()
+    {
+        string encryptedScore = PlayerPrefs.GetString("HighScore", "");
+        if (!string.IsNullOrEmpty(encryptedScore))
+        {
+            try
+            {
+                byte[] bytes = Convert.FromBase64String(encryptedScore);
+                return BitConverter.ToInt32(bytes, 0);
+            }
+            catch
+            {
+                Debug.LogWarning("Failed to decode high score.");
+                return 0;
+            }
+        }
+        return 0;
+    }
+}
