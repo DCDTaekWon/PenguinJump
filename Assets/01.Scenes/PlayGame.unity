@@ -195,7 +195,7 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 0, b: 0, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
@@ -342,7 +342,7 @@ GameObject:
   - component: {fileID: 1327038893}
   - component: {fileID: 1327038892}
   m_Layer: 0
-  m_Name: Ocean
+  m_Name: OceanManger
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -360,10 +360,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c6a6df342b52d24092cf6bbb590c535, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waveHeight: 0.5
-  waveFrequency: 0.5
+  baseWaveHeight: 0.5
+  waveHeightIncreaseRate: 0.1
+  waveFrequencyIncreaseRate: 0.05
   waveLength: 0.5
   waveOriginPosition: {x: 0, y: 0, z: 0}
+  waveFollowers:
+  - {fileID: 2743443107944903966, guid: 46377c4963648df468f1ebde4371fc3f, type: 3}
+  - {fileID: 5912610591517586635, guid: 380bd898e11a13e42afdfe19527e6294, type: 3}
+  - {fileID: 4527663047314768790, guid: 7b4d9f80da0369443b02fc8a3d3b6031, type: 3}
 --- !u!23 &1327038893
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -456,7 +461,7 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 1578786ccedef8b4fa76bde71acebd2b, type: 3}
+  m_audioClip: {fileID: 8300000, guid: 5059ec18c02dfaf449724856bde78b00, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -988,14 +993,10 @@ MonoBehaviour:
   rows: 6
   columns: 6
   hexSize: 1
-  platformThickness: -8
   hexSpacing: -0.4
-  platformScale: 1
+  platformRotation: {x: 90, y: 0, z: 0}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
-  hitColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   warningColor: {r: 1, g: 0, b: 0, a: 1}
-  IceMaterial: {fileID: 0}
-  platformRotation: {x: 0, y: 90, z: 0}
   initialActivePlatforms: 5
   minActivePlatforms: 1
   initialPlatformLifetime: 3
@@ -1006,7 +1007,7 @@ MonoBehaviour:
   minPlatformLifetime: 1
   maxPlatformsToDestroy: 1
   maxPlatformDestroyLimit: 12
-  player: {fileID: 0}
+  player: {fileID: 1578862122}
 --- !u!4 &1892101277
 Transform:
   m_ObjectHideFlags: 0

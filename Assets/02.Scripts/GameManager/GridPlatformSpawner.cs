@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using DG.Tweening;
 
 public class HexGridPlatformSpawner : MonoBehaviour
 {
@@ -226,11 +227,19 @@ public class HexGridPlatformSpawner : MonoBehaviour
 
     private void ActivatePlatform(PlatformInfo platformInfo)
     {
+        // 발판을 처음 비활성화된 상태로 -2 아래에 위치시킵니다.
         platformInfo.platform.SetActive(true);
+        platformInfo.platform.transform.position += new Vector3(0, -2f, 0);  // y축 -2로 이동
         platformInfo.renderer.material.color = normalColor;
         platformInfo.state = PlatformState.Normal;
-        Debug.Log("활성화된 발판: " + platformInfo.platform.name);
+
+        // DOTween을 사용하여 -2에서 원래 위치로 애니메이션
+        platformInfo.platform.transform.DOMoveY(platformInfo.platform.transform.position.y + 2f, 3f) // 3초에 걸쳐 위로 이동
+            .SetEase(Ease.OutBounce);  // 자연스럽게 위로 튀는 느낌
+
+        Debug.Log($"활성화된 발판: {platformInfo.platform.name}, 스케일: {platformInfo.platform.transform.localScale}, 위치: {platformInfo.platform.transform.position}");
     }
+
 
     private void PlacePenguinOnPlatform(PlatformInfo platformInfo)
     {
@@ -248,16 +257,21 @@ public class HexGridPlatformSpawner : MonoBehaviour
 
     private void SetPlatformWarning(PlatformInfo platformInfo)
     {
-        platformInfo.renderer.material.color = warningColor; // warningColor 변수를 사용합니다.
+        platformInfo.renderer.material.color = warningColor; // 발판 색상을 경고 색상으로 변경
         platformInfo.state = PlatformState.Warning;
         Debug.Log("발판 Warning 상태로 변경: " + platformInfo.platform.name);
     }
 
     private IEnumerator DisableAndRespawnPlatform(PlatformInfo platformInfo)
     {
-        yield return new WaitForSeconds(warningDuration);
-        platformInfo.platform.SetActive(false);
-        platformInfo.state = PlatformState.Break;
-        Debug.Log("발판 비활성화 및 Break 상태로 전환: " + platformInfo.platform.name);
+        yield return new WaitForSeconds(warningDuration); // 경고 시간이 지나면
+        // 발판을 아래로 하강시키고 비활성화
+        platformInfo.platform.transform.DOMoveY(platformInfo.platform.transform.position.y - 2f, 1f) // 1초에 걸쳐 아래로 이동
+            .SetEase(Ease.InQuad)  // 부드럽게 하강
+            .OnComplete(() => {
+                platformInfo.platform.SetActive(false);  // 하강 후 발판을 비활성화
+                platformInfo.state = PlatformState.Break;
+                Debug.Log("발판 비활성화 및 Break 상태로 전환: " + platformInfo.platform.name);
+            });
     }
 }
