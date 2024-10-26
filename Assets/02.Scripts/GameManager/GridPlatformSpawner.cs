@@ -5,8 +5,8 @@ using System.Collections.Generic;
 public class HexGridPlatformSpawner : MonoBehaviour
 {
     [Header("Tile Settings")]
-    [Tooltip("생성할 발판의 프리팹")]
-    public GameObject platformPrefab;
+    [Tooltip("생성할 발판의 프리팹들")]
+    public GameObject[] platformPrefabs; // 여러 프리팹을 받을 수 있도록 배열로 수정
 
     [Tooltip("발판의 행(row) 개수")]
     public int rows = 5;
@@ -17,29 +17,17 @@ public class HexGridPlatformSpawner : MonoBehaviour
     [Tooltip("발판의 기본 크기 (반지름)")]
     public float hexSize = 1.0f;
 
-    [Tooltip("발판의 두께")]
-    public float platformThickness = 3.0f;
-
     [Tooltip("발판 간의 간격 (hexSize를 기준으로)")]
     public float hexSpacing = 0.1f;
 
-    [Tooltip("발판의 크기 조정 비율")]
-    public float platformScale = 1.0f;
+    [Tooltip("발판의 회전 각도")]
+    public Vector3 platformRotation = Vector3.zero;
 
     [Tooltip("발판의 기본 색상")]
     public Color normalColor = Color.white;
 
-    [Tooltip("발판이 플레이어에 의해 밟혔을 때 색상")]
-    public Color hitColor = Color.yellow;
-
     [Tooltip("발판이 경고 상태일 때 색상")]
     public Color warningColor = Color.red;
-
-    [Tooltip("발판에 적용될 아이스 머티리얼")]
-    public Material IceMaterial;
-
-    [Tooltip("발판의 회전 각도")]
-    public Vector3 platformRotation = Vector3.zero;
 
     [Header("Difficulty and Timing")]
     [Tooltip("초기 활성화할 발판 수")]
@@ -121,22 +109,31 @@ public class HexGridPlatformSpawner : MonoBehaviour
         float width = (hexSize + hexSpacing) * 2;
         float height = Mathf.Sqrt(3) * (hexSize + hexSpacing);
 
+        if (platformPrefabs == null || platformPrefabs.Length == 0)
+        {
+            Debug.LogError("Error: No platform prefabs are assigned in the inspector.");
+            return;
+        }
+
         for (int row = 0; row < rows; row++)
         {
             for (int col = 0; col < columns; col++)
             {
                 Vector3 spawnPosition = HexToWorldPosition(col, row, width, height);
-                GameObject platform = Instantiate(platformPrefab, spawnPosition, Quaternion.Euler(platformRotation));
-                platform.transform.localScale = new Vector3(platformScale, platformThickness, platformScale);
 
-                // IceMaterial 적용
-                MeshRenderer renderer = platform.GetComponent<MeshRenderer>();
-                if (renderer != null)
+                // 랜덤으로 프리팹 선택
+                GameObject prefabToSpawn = platformPrefabs[Random.Range(0, platformPrefabs.Length)];
+
+                if (prefabToSpawn == null)
                 {
-                    renderer.material = IceMaterial;
+                    Debug.LogWarning("Warning: Selected prefab is null.");
+                    continue;
                 }
 
+                // 선택된 프리팹을 생성
+                GameObject platform = Instantiate(prefabToSpawn, spawnPosition, Quaternion.Euler(platformRotation));
                 platform.layer = LayerMask.NameToLayer("GroundLayer");
+                MeshRenderer renderer = platform.GetComponent<MeshRenderer>();
                 platformInfos.Add(new PlatformInfo(platform, renderer));
 
                 // 처음 생성된 발판을 Break 상태로 비활성화
@@ -147,7 +144,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
         Debug.Log("발판 생성 완료: 총 발판 수 = " + platformInfos.Count);
     }
 
-    // 게임 시작 시 초기 발판 활성화
+
     private void ActivateInitialPlatforms()
     {
         List<PlatformInfo> breakPlatforms = platformInfos.FindAll(p => p.state == PlatformState.Break);
@@ -169,7 +166,6 @@ public class HexGridPlatformSpawner : MonoBehaviour
         }
     }
 
-    // 랜덤 발판 활성화
     private IEnumerator ActivateRandomPlatforms()
     {
         while (true)
@@ -192,7 +188,6 @@ public class HexGridPlatformSpawner : MonoBehaviour
         }
     }
 
-    // 일정 간격으로 활성화된 발판의 수를 줄임
     private IEnumerator DecreaseActivePlatforms()
     {
         while (true)
@@ -253,7 +248,7 @@ public class HexGridPlatformSpawner : MonoBehaviour
 
     private void SetPlatformWarning(PlatformInfo platformInfo)
     {
-        platformInfo.renderer.material.color = warningColor;
+        platformInfo.renderer.material.color = warningColor; // warningColor 변수를 사용합니다.
         platformInfo.state = PlatformState.Warning;
         Debug.Log("발판 Warning 상태로 변경: " + platformInfo.platform.name);
     }

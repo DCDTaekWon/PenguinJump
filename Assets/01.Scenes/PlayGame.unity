@@ -123,11 +123,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &7266782 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2271876378511131914, guid: ef8f8659f397d87499889a4a8817e1b0, type: 3}
-  m_PrefabInstance: {fileID: 6648593284200670716}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &537685208
 GameObject:
   m_ObjectHideFlags: 0
@@ -200,7 +195,7 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 0.66924834, g: 0.59963685, b: 0.7584905, a: 1}
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
@@ -461,9 +456,9 @@ AudioSource:
   m_Enabled: 1
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
-  m_audioClip: {fileID: 8300000, guid: 5059ec18c02dfaf449724856bde78b00, type: 3}
+  m_audioClip: {fileID: 8300000, guid: 1578786ccedef8b4fa76bde71acebd2b, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.5
+  m_Volume: 1
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -621,7 +616,7 @@ Transform:
   m_GameObject: {fileID: 1512816822}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: -1.23}
   m_LocalScale: {x: 20, y: 10, z: 20}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -986,29 +981,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 458b40c9d9b3eee47b4d012132d5792c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  platformPrefab: {fileID: 7266782}
+  platformPrefabs:
+  - {fileID: 2743443107944903966, guid: 46377c4963648df468f1ebde4371fc3f, type: 3}
+  - {fileID: 5912610591517586635, guid: 380bd898e11a13e42afdfe19527e6294, type: 3}
+  - {fileID: 4527663047314768790, guid: 7b4d9f80da0369443b02fc8a3d3b6031, type: 3}
   rows: 6
   columns: 6
   hexSize: 1
   platformThickness: -8
   hexSpacing: -0.4
   platformScale: 1
-  normalColor: {r: 0.7905661, g: 0.9757178, b: 1, a: 1}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
   hitColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   warningColor: {r: 1, g: 0, b: 0, a: 1}
-  IceMaterial: {fileID: 2100000, guid: 5655edfa648191a43bc07971524d8458, type: 2}
+  IceMaterial: {fileID: 0}
   platformRotation: {x: 0, y: 90, z: 0}
   initialActivePlatforms: 5
   minActivePlatforms: 1
   initialPlatformLifetime: 3
   respawnDelay: 3
-  warningDuration: 3
+  warningDuration: 1
   activationInterval: 2
   reduceInterval: 10
   minPlatformLifetime: 1
   maxPlatformsToDestroy: 1
-  maxPlatformDestroyLimit: 5
-  player: {fileID: 1578862122}
+  maxPlatformDestroyLimit: 12
+  player: {fileID: 0}
 --- !u!4 &1892101277
 Transform:
   m_ObjectHideFlags: 0
