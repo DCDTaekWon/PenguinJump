@@ -21,7 +21,20 @@ public class PenguinController : MonoBehaviour
     private float jumpRequestTime = 0f;
 
     public CameraFollow cameraFollow;
-    public DeathPopupManager deathPopupManager; // DeathPopupManager 참조 추가
+    public DeathPopupManager deathPopupManager;
+
+    public GameObject groundIndicatorPrefab;
+    private GameObject groundIndicator;
+    private float groundOffsetY = 0.1f;
+
+    public LayerMask WaterLayer;
+    public LayerMask GroundLayer;
+
+    public Sprite waterIndicatorSprite;
+    public Sprite groundIndicatorSprite;
+
+    private SpriteRenderer indicatorSpriteRenderer;
+    private Camera mainCamera; // 카메라 참조
 
     void Start()
     {
@@ -32,12 +45,19 @@ public class PenguinController : MonoBehaviour
         rb.isKinematic = false;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+
+        groundIndicator = Instantiate(groundIndicatorPrefab);
+        indicatorSpriteRenderer = groundIndicator.GetComponent<SpriteRenderer>();
+
+        // 메인 카메라 참조 가져오기
+        mainCamera = Camera.main;
     }
 
     void Update()
     {
         HandleMovement();
         HandleJumpInput();
+        UpdateGroundIndicator();
     }
 
     void FixedUpdate()
@@ -113,11 +133,54 @@ public class PenguinController : MonoBehaviour
     {
         if (other.CompareTag("DeathZone"))
         {
-            // DeathPopupManager 호출
             if (deathPopupManager != null)
             {
                 deathPopupManager.ShowDeathPopup();
             }
         }
     }
+
+    private void UpdateGroundIndicator()
+    {
+        Ray ray = new Ray(transform.position, Vector3.down);
+        RaycastHit hit;
+
+        // Ground 또는 Water 레이어에 닿는지 확인
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity, GroundLayer | WaterLayer))
+        {
+            Vector3 indicatorPosition = hit.point;
+
+            // 공중에 있을 때와 바닥에 있을 때 Y 위치 조정
+            if (isGrounded) // 펭귄이 땅에 있는 경우
+            {
+                indicatorPosition.y -= groundOffsetY; // 겹치지 않도록 살짝 아래로 이동
+            }
+            else // 공중에 있을 경우
+            {
+                indicatorPosition.y += groundOffsetY; // 원래 위치로 표시
+            }
+
+            groundIndicator.transform.position = indicatorPosition;
+            groundIndicator.SetActive(true);
+
+            // 레이어에 따른 스프라이트 설정
+            if (((1 << hit.collider.gameObject.layer) & WaterLayer) != 0)
+            {
+                indicatorSpriteRenderer.sprite = waterIndicatorSprite;
+            }
+            else if (((1 << hit.collider.gameObject.layer) & GroundLayer) != 0)
+            {
+                indicatorSpriteRenderer.sprite = groundIndicatorSprite;
+            }
+
+            // 스프라이트가 항상 카메라를 바라보도록 회전 설정 (크기는 고정)
+            groundIndicator.transform.LookAt(mainCamera.transform);
+            groundIndicator.transform.rotation = Quaternion.Euler(90, groundIndicator.transform.rotation.eulerAngles.y, 0); // Y축 회전만 반영
+        }
+        else
+        {
+            groundIndicator.SetActive(false);
+        }
+    }
+
 }

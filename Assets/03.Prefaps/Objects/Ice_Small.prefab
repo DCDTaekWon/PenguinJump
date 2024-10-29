@@ -131,4 +131,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   duration: 3
-  delay: 0.5
+  returnDuration: 2
