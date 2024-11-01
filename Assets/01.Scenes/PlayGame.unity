@@ -2289,15 +2289,14 @@ MonoBehaviour:
   jumpSound: {fileID: 8300000, guid: b46df4a152b9a0e4a90a594f6eab4d21, type: 3}
   cameraFollow: {fileID: 1986519530}
   deathPopupManager: {fileID: 0}
-  groundIndicatorPrefab: {fileID: 2051163547535545070, guid: 43aedbac331aaa84cbd2d77cb2193292, type: 3}
+  groundPrefab: {fileID: 9041052933542410189, guid: f33a7ba20d67b5d44bff272ab024de7b, type: 3}
+  waterPrefab: {fileID: 4802310297776335457, guid: 39956c586d3c5714db7152652b4aca44, type: 3}
   WaterLayer:
     serializedVersion: 2
     m_Bits: 2048
   GroundLayer:
     serializedVersion: 2
     m_Bits: 128
-  waterIndicatorSprite: {fileID: 21300000, guid: 3141919dec633574286a1302af2c9904, type: 3}
-  groundIndicatorSprite: {fileID: 0}
 --- !u!54 &1578862124
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3057,7 +3056,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 1578862122}
-  offset: {x: 0, y: 2, z: -3}
+  offset: {x: 0, y: 3, z: -1.5}
   smoothSpeed: 0.125
   jumpOffsetMultiplier: {x: 0, y: 2, z: 1}
   jumpSmoothSpeed: 0.02

@@ -23,18 +23,16 @@ public class PenguinController : MonoBehaviour
     public CameraFollow cameraFollow;
     public DeathPopupManager deathPopupManager;
 
-    public GameObject groundIndicatorPrefab;
-    private GameObject groundIndicator;
+    public GameObject groundPrefab; // Ground 인디케이터 프리팹
+    public GameObject waterPrefab;  // Water 인디케이터 프리팹
+    private GameObject currentIndicator; // 현재 활성화된 인디케이터
+
     private float groundOffsetY = 0.1f;
 
     public LayerMask WaterLayer;
     public LayerMask GroundLayer;
 
-    public Sprite waterIndicatorSprite;
-    public Sprite groundIndicatorSprite;
-
-    private SpriteRenderer indicatorSpriteRenderer;
-    private Camera mainCamera; // 카메라 참조
+    private Camera mainCamera;
 
     void Start()
     {
@@ -46,10 +44,6 @@ public class PenguinController : MonoBehaviour
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
-        groundIndicator = Instantiate(groundIndicatorPrefab);
-        indicatorSpriteRenderer = groundIndicator.GetComponent<SpriteRenderer>();
-
-        // 메인 카메라 참조 가져오기
         mainCamera = Camera.main;
     }
 
@@ -57,7 +51,7 @@ public class PenguinController : MonoBehaviour
     {
         HandleMovement();
         HandleJumpInput();
-        UpdateGroundIndicator();
+        UpdateIndicator();
     }
 
     void FixedUpdate()
@@ -128,59 +122,59 @@ public class PenguinController : MonoBehaviour
         }
     }
 
-    // DeathZone과의 충돌 처리
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("DeathZone"))
         {
-            if (deathPopupManager != null)
-            {
-                deathPopupManager.ShowDeathPopup();
-            }
+            deathPopupManager?.ShowDeathPopup();
         }
     }
 
-    private void UpdateGroundIndicator()
+    private void UpdateIndicator()
     {
         Ray ray = new Ray(transform.position, Vector3.down);
         RaycastHit hit;
 
-        // Ground 또는 Water 레이어에 닿는지 확인
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, GroundLayer | WaterLayer))
         {
             Vector3 indicatorPosition = hit.point;
+            indicatorPosition.y += isGrounded ? -groundOffsetY : groundOffsetY;
 
-            // 공중에 있을 때와 바닥에 있을 때 Y 위치 조정
-            if (isGrounded) // 펭귄이 땅에 있는 경우
-            {
-                indicatorPosition.y -= groundOffsetY; // 겹치지 않도록 살짝 아래로 이동
-            }
-            else // 공중에 있을 경우
-            {
-                indicatorPosition.y += groundOffsetY; // 원래 위치로 표시
-            }
-
-            groundIndicator.transform.position = indicatorPosition;
-            groundIndicator.SetActive(true);
-
-            // 레이어에 따른 스프라이트 설정
+            // 현재 활성화된 인디케이터가 있는지 확인 후 교체
             if (((1 << hit.collider.gameObject.layer) & WaterLayer) != 0)
             {
-                indicatorSpriteRenderer.sprite = waterIndicatorSprite;
+                SetIndicator(waterPrefab, indicatorPosition);
             }
             else if (((1 << hit.collider.gameObject.layer) & GroundLayer) != 0)
             {
-                indicatorSpriteRenderer.sprite = groundIndicatorSprite;
+                SetIndicator(groundPrefab, indicatorPosition);
             }
 
-            // 스프라이트가 항상 카메라를 바라보도록 회전 설정 (크기는 고정)
-            groundIndicator.transform.LookAt(mainCamera.transform);
-            groundIndicator.transform.rotation = Quaternion.Euler(90, groundIndicator.transform.rotation.eulerAngles.y, 0); // Y축 회전만 반영
+            // 인디케이터를 카메라 방향으로 회전
+            currentIndicator.transform.LookAt(mainCamera.transform);
+            currentIndicator.transform.rotation = Quaternion.Euler(90, currentIndicator.transform.rotation.eulerAngles.y, 0);
         }
         else
         {
-            groundIndicator.SetActive(false);
+            if (currentIndicator != null) currentIndicator.SetActive(false);
         }
     }
 
+    private void SetIndicator(GameObject prefab, Vector3 position)
+    {
+        // 새로운 인디케이터가 필요하면 기존 인디케이터 삭제 및 새로 생성
+        if (currentIndicator == null || currentIndicator.name != prefab.name)
+        {
+            if (currentIndicator != null)
+            {
+                Destroy(currentIndicator);
+            }
+            currentIndicator = Instantiate(prefab, position, Quaternion.identity);
+        }
+        else
+        {
+            currentIndicator.transform.position = position;
+            currentIndicator.SetActive(true);
+        }
+    }
 }
