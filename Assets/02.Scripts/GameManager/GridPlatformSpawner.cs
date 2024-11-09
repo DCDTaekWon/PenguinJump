@@ -7,7 +7,22 @@ public class HexGridPlatformSpawner : MonoBehaviour
 {
     [Header("Tile Settings")]
     [Tooltip("생성할 발판의 프리팹들")]
-    public GameObject[] platformPrefabs; // 여러 프리팹을 받을 수 있도록 배열로 수정
+    public GameObject[] largePlatformPrefabs;  // 큰 발판 프리팹들
+    public GameObject[] mediumPlatformPrefabs; // 중간 발판 프리팹들
+    public GameObject[] smallPlatformPrefabs;  // 작은 발판 프리팹들
+
+    [Tooltip("발판의 등장 비율")]
+    public int largePlatformSpawnRate = 10;  // 큰 발판 등장 비율
+    public int mediumPlatformSpawnRate = 5;  // 중간 발판 등장 비율
+    public int smallPlatformSpawnRate = 5;   // 작은 발판 등장 비율
+
+    [Tooltip("발판의 최대, 최소 개수")]
+    public int maxLargePlatforms = 7;
+    public int minLargePlatforms = 3;
+    public int maxMediumPlatforms = 4;
+    public int minMediumPlatforms = 1;
+    public int maxSmallPlatforms = 3;
+    public int minSmallPlatforms = 2;
 
     [Tooltip("발판의 행(row) 개수")]
     public int rows = 5;
@@ -106,44 +121,72 @@ public class HexGridPlatformSpawner : MonoBehaviour
 
     // 발판 그리드 생성
     private void SpawnHexagonalPlatforms()
+{
+    float width = (hexSize + hexSpacing) * 2;
+    float height = Mathf.Sqrt(3) * (hexSize + hexSpacing);
+
+    // 크기별 프리팹이 설정되지 않은 경우 오류 메시지 출력
+    if ((largePlatformPrefabs == null || largePlatformPrefabs.Length == 0) ||
+        (mediumPlatformPrefabs == null || mediumPlatformPrefabs.Length == 0) ||
+        (smallPlatformPrefabs == null || smallPlatformPrefabs.Length == 0))
     {
-        float width = (hexSize + hexSpacing) * 2;
-        float height = Mathf.Sqrt(3) * (hexSize + hexSpacing);
-
-        if (platformPrefabs == null || platformPrefabs.Length == 0)
-        {
-            Debug.LogError("Error: No platform prefabs are assigned in the inspector.");
-            return;
-        }
-
-        for (int row = 0; row < rows; row++)
-        {
-            for (int col = 0; col < columns; col++)
-            {
-                Vector3 spawnPosition = HexToWorldPosition(col, row, width, height);
-
-                // 랜덤으로 프리팹 선택
-                GameObject prefabToSpawn = platformPrefabs[Random.Range(0, platformPrefabs.Length)];
-
-                if (prefabToSpawn == null)
-                {
-                    Debug.LogWarning("Warning: Selected prefab is null.");
-                    continue;
-                }
-
-                // 선택된 프리팹을 생성
-                GameObject platform = Instantiate(prefabToSpawn, spawnPosition, Quaternion.Euler(platformRotation));
-                platform.layer = LayerMask.NameToLayer("GroundLayer");
-                MeshRenderer renderer = platform.GetComponent<MeshRenderer>();
-                platformInfos.Add(new PlatformInfo(platform, renderer));
-
-                // 처음 생성된 발판을 Break 상태로 비활성화
-                platform.SetActive(false);
-            }
-        }
-
-        Debug.Log("발판 생성 완료: 총 발판 수 = " + platformInfos.Count);
+        Debug.LogError("Error: One or more platform prefab arrays are not assigned in the inspector.");
+        return;
     }
+
+    // 크기별 발판 개수를 추적할 변수 초기화
+    int largePlatformCount = 0;
+    int mediumPlatformCount = 0;
+    int smallPlatformCount = 0;
+
+    for (int row = 0; row < rows; row++)
+    {
+        for (int col = 0; col < columns; col++)
+        {
+            Vector3 spawnPosition = HexToWorldPosition(col, row, width, height);
+            GameObject prefabToSpawn = null;
+
+            // 랜덤으로 발판 크기를 선택하고, 각 크기별 등장 비율 및 개수 제한 적용
+            float randomValue = Random.Range(0f, largePlatformSpawnRate + mediumPlatformSpawnRate + smallPlatformSpawnRate);
+
+            if (randomValue < largePlatformSpawnRate && largePlatformCount < maxLargePlatforms)
+            {
+                // 큰 발판 선택
+                prefabToSpawn = largePlatformPrefabs[Random.Range(0, largePlatformPrefabs.Length)];
+                largePlatformCount++;
+            }
+            else if (randomValue < largePlatformSpawnRate + mediumPlatformSpawnRate && mediumPlatformCount < maxMediumPlatforms)
+            {
+                // 중간 발판 선택
+                prefabToSpawn = mediumPlatformPrefabs[Random.Range(0, mediumPlatformPrefabs.Length)];
+                mediumPlatformCount++;
+            }
+            else if (smallPlatformCount < maxSmallPlatforms)
+            {
+                // 작은 발판 선택
+                prefabToSpawn = smallPlatformPrefabs[Random.Range(0, smallPlatformPrefabs.Length)];
+                smallPlatformCount++;
+            }
+
+            if (prefabToSpawn == null)
+            {
+                Debug.LogWarning("Warning: Selected prefab is null or reached max count.");
+                continue;
+            }
+
+            // 선택된 프리팹을 생성
+            GameObject platform = Instantiate(prefabToSpawn, spawnPosition, Quaternion.Euler(platformRotation));
+            platform.layer = LayerMask.NameToLayer("GroundLayer");
+            MeshRenderer renderer = platform.GetComponent<MeshRenderer>();
+            platformInfos.Add(new PlatformInfo(platform, renderer));
+
+            // 처음 생성된 발판을 Break 상태로 비활성화
+            platform.SetActive(false);
+        }
+    }
+
+    Debug.Log($"발판 생성 완료: 큰 {largePlatformCount}, 중간 {mediumPlatformCount}, 작은 {smallPlatformCount}");
+}
 
 
     private void ActivateInitialPlatforms()
