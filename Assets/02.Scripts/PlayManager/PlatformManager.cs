@@ -5,41 +5,30 @@ using DG.Tweening;
 
 public class PlatformManager : MonoBehaviour
 {
-    [Header("Tile Settings")]
-    public GameObject largePlatformPrefab;  // 큰 발판 프리팹
-    public GameObject mediumPlatformPrefab; // 중간 발판 프리팹
-    public GameObject smallPlatformPrefab;  // 작은 발판 프리팹
+    [Header("Platform Prefabs")]
+    public GameObject largePlatformPrefab;
+    public GameObject mediumPlatformPrefab;
+    public GameObject smallPlatformPrefab;
 
-    public GameObject goldFishPrefab;   // 금물고기 프리팹
-    public GameObject silverFishPrefab; // 은물고기 프리팹
-    public GameObject bronzeFishPrefab; // 동물고기 프리팹
+    [Header("Fish Prefabs")]
+    public GameObject goldFishPrefab;
+    public GameObject silverFishPrefab;
+    public GameObject bronzeFishPrefab;
 
-    [Tooltip("발판의 기본 크기 (반지름)")]
-    public float hexSize = 1.0f;
-
-    [Tooltip("발판 간의 간격 (hexSize를 기준으로)")]
-    public float hexSpacing = 0.1f;
-
-    [Tooltip("발판의 회전 각도")]
-    public Vector3 platformRotation = Vector3.zero;
-
-    [Tooltip("발판의 기본 색상")]
+    [Header("Settings")]
     public Color normalColor = Color.white;
-
-    [Tooltip("발판이 경고 상태일 때 색상")]
     public Color warningColor = Color.red;
-
-    [Header("Player Settings")]
-    public Transform player; // 플레이어 위치
+    public Vector3 platformRotation = Vector3.zero;
+    public float hexSize = 1.0f;
+    public float hexSpacing = 0.1f;
 
     private List<PlatformInfo> platformInfos = new List<PlatformInfo>();
 
     private enum PlatformState
     {
-        Normal,  // 기본 활성화 상태
-        Hit,     // 플레이어가 밟았을 때 상태
-        Warning, // 파괴될 예정인 상태
-        Break    // 비활성화 상태
+        Normal,  // 활성 상태
+        Disable, // 비활성 상태
+        Break    // 하강 상태
     }
 
     private class PlatformInfo
@@ -47,129 +36,158 @@ public class PlatformManager : MonoBehaviour
         public GameObject platform;
         public PlatformState state;
         public Renderer renderer;
-        public GameObject fish;        // 물고기 오브젝트
-        public string size;            // 발판 크기 (Large, Medium, Small)
+        public GameObject fish;
+        public string size;
 
         public PlatformInfo(GameObject platform, Renderer renderer, string size)
         {
             this.platform = platform;
             this.renderer = renderer;
-            this.state = PlatformState.Break; // 초기 상태는 비활성화
+            this.state = PlatformState.Disable; // 초기 상태
             this.size = size;
-            this.fish = null; // 물고기 없음
+            this.fish = null;
         }
     }
 
-    public void SpawnPlatforms(LevelPhase phase)
+    /// <summary>
+    /// 현재 구간 설정에 맞게 발판을 업데이트합니다.
+    /// </summary>
+    public void UpdatePhase(LevelPhase phase)
     {
-        ClearPlatforms(); // 기존 데이터 초기화
+        // 현재 활성화된 발판 필터링
+        List<PlatformInfo> activePlatforms = platformInfos.FindAll(p => p.state == PlatformState.Normal);
 
-        int totalPlatforms = phase.maxActivePlatforms;
-
-        int largeCount = Mathf.RoundToInt(totalPlatforms * (phase.largeRate / 10f));
-        int mediumCount = Mathf.RoundToInt(totalPlatforms * (phase.mediumRate / 10f));
-        int smallCount = totalPlatforms - largeCount - mediumCount;
-
-        SpawnPlatformBySize(largePlatformPrefab, "Large", largeCount, phase, bronzeFishPrefab);
-        SpawnPlatformBySize(mediumPlatformPrefab, "Medium", mediumCount, phase, silverFishPrefab);
-        SpawnPlatformBySize(smallPlatformPrefab, "Small", smallCount, phase, goldFishPrefab);
-
-        Debug.Log($"발판 생성 완료: 큰 {largeCount}, 중간 {mediumCount}, 작은 {smallCount}");
-
-        ActivateInitialPlatforms(phase.minActivePlatforms);
-    }
-
-    private void ActivateInitialPlatforms(int count)
-    {
-        List<PlatformInfo> breakPlatforms = platformInfos.FindAll(p => p.state == PlatformState.Break);
-        int platformsToActivate = Mathf.Min(count, breakPlatforms.Count);
-
-        for (int i = 0; i < platformsToActivate; i++)
+        // 초과된 발판 비활성화
+        int currentActiveCount = activePlatforms.Count;
+        if (currentActiveCount > phase.maxActivePlatforms)
         {
-            ActivatePlatform(breakPlatforms[i]);
+            int platformsToDisable = currentActiveCount - phase.maxActivePlatforms;
+            DisableExcessPlatforms(activePlatforms, platformsToDisable);
+        }
+
+        // 부족한 발판 추가
+        int neededPlatforms = phase.maxActivePlatforms - currentActiveCount;
+        if (neededPlatforms > 0)
+        {
+            SpawnAdditionalPlatforms(neededPlatforms, phase);
         }
     }
 
-    private void SpawnPlatformBySize(GameObject prefab, string size, int count, LevelPhase phase, GameObject fishPrefab)
+    private void DisableExcessPlatforms(List<PlatformInfo> activePlatforms, int count)
     {
-        float width = (hexSize + hexSpacing) * 2;
-        float height = Mathf.Sqrt(3) * (hexSize + hexSpacing);
+        List<PlatformInfo> platformsToDisable = new List<PlatformInfo>();
+        while (platformsToDisable.Count < count)
+        {
+            PlatformInfo randomPlatform = activePlatforms[Random.Range(0, activePlatforms.Count)];
+            if (!platformsToDisable.Contains(randomPlatform))
+            {
+                platformsToDisable.Add(randomPlatform);
+            }
+        }
+
+        foreach (var platform in platformsToDisable)
+        {
+            StartCoroutine(DisableAndSinkPlatform(platform));
+        }
+    }
+
+    private void SpawnAdditionalPlatforms(int count, LevelPhase phase)
+    {
+        // 발판 크기 비율 계산
+        int largeCount = Mathf.RoundToInt(count * (phase.largeRate / 10f));
+        int mediumCount = Mathf.RoundToInt(count * (phase.mediumRate / 10f));
+        int smallCount = count - largeCount - mediumCount;
+
+        // 발판 생성
+        SpawnPlatformBySize(largePlatformPrefab, "Large", largeCount, phase);
+        SpawnPlatformBySize(mediumPlatformPrefab, "Medium", mediumCount, phase);
+        SpawnPlatformBySize(smallPlatformPrefab, "Small", smallCount, phase);
+    }
+
+    private void SpawnPlatformBySize(GameObject prefab, string size, int count, LevelPhase phase)
+    {
+        List<Vector3> gridPositions = GenerateHexGridPositions(phase.columns, phase.rows);
 
         for (int i = 0; i < count; i++)
         {
-            Vector3 spawnPosition = HexToWorldPosition(i % phase.columns, i / phase.columns, width, height);
-
-            GameObject platform = Instantiate(prefab, spawnPosition, Quaternion.Euler(platformRotation));
-            platform.layer = LayerMask.NameToLayer("GroundLayer");
-            MeshRenderer renderer = platform.GetComponent<MeshRenderer>();
-            PlatformInfo platformInfo = new PlatformInfo(platform, renderer, size);
-            platformInfos.Add(platformInfo);
-
-            if (Random.Range(0, 10) < 5 && platformInfos.Count <= phase.maxFishCount)
+            if (gridPositions.Count == 0)
             {
-                GameObject fish = Instantiate(fishPrefab,
-                    platform.transform.position + new Vector3(0, 0.5f, 0),
-                    Quaternion.identity);
-
-                fish.transform.SetParent(platform.transform); // 물고기를 발판의 자식으로 설정
-                platformInfo.fish = fish;
+                Debug.LogWarning("그리드 위치 부족!");
+                break;
             }
 
-            platform.SetActive(false);
+            int randomIndex = Random.Range(0, gridPositions.Count);
+            Vector3 spawnPosition = gridPositions[randomIndex];
+            gridPositions.RemoveAt(randomIndex);
+
+            // 발판 생성
+            GameObject platform = Instantiate(prefab, spawnPosition, Quaternion.Euler(platformRotation));
+            platform.layer = LayerMask.NameToLayer("GroundLayer");
+            Renderer renderer = platform.GetComponent<Renderer>();
+            PlatformInfo platformInfo = new PlatformInfo(platform, renderer, size);
+
+            platformInfos.Add(platformInfo);
+
+            // 물고기 추가
+            if (Random.Range(0, 10) < 5 && platformInfos.Count <= phase.maxFishCount)
+            {
+                GameObject fishPrefab = GetFishPrefabBySize(size);
+                GameObject fish = Instantiate(fishPrefab, platform.transform.position + Vector3.up * 0.5f, Quaternion.identity);
+                fish.transform.SetParent(platform.transform);
+                platformInfo.fish = fish;
+            }
         }
     }
 
-    private Vector3 HexToWorldPosition(int col, int row, float width, float height)
+    private GameObject GetFishPrefabBySize(string size)
     {
-        float x = col * width * 0.75f;
-        float z = row * height + (col % 2 == 0 ? 0 : height / 2);
-        return new Vector3(x, -1, z); // y 위치 낮춤
+        switch (size)
+        {
+            case "Large": return bronzeFishPrefab;
+            case "Medium": return silverFishPrefab;
+            case "Small": return goldFishPrefab;
+            default: return null;
+        }
     }
 
-    private void ActivatePlatform(PlatformInfo platformInfo)
+    private IEnumerator DisableAndSinkPlatform(PlatformInfo platformInfo)
     {
-        platformInfo.platform.SetActive(true);
-        platformInfo.renderer.material.color = normalColor;
-        platformInfo.state = PlatformState.Normal;
+        platformInfo.state = PlatformState.Break;
+        platformInfo.renderer.material.color = warningColor;
 
-        platformInfo.platform.transform.DOMoveY(platformInfo.platform.transform.position.y + 2f, 3f)
-            .SetEase(Ease.OutBounce);
-
-        if (platformInfo.fish != null)
-            platformInfo.fish.SetActive(true);
-
-        Debug.Log($"활성화된 발판: {platformInfo.platform.name}");
-    }
-
-    private IEnumerator DisableAndRespawnPlatform(PlatformInfo platformInfo)
-    {
-        yield return new WaitForSeconds(1f);
-
-        platformInfo.platform.transform.DOMoveY(platformInfo.platform.transform.position.y - 2f, 1f)
+        platformInfo.platform.transform.DOMoveY(-4f, 2f)
             .SetEase(Ease.InQuad)
             .OnComplete(() =>
             {
+                platformInfo.state = PlatformState.Disable;
                 platformInfo.platform.SetActive(false);
-                platformInfo.state = PlatformState.Break;
 
                 if (platformInfo.fish != null)
                 {
                     Destroy(platformInfo.fish);
                     platformInfo.fish = null;
                 }
-
-                Debug.Log($"발판 비활성화 완료: {platformInfo.platform.name}");
             });
+
+        yield return new WaitForSeconds(2f);
     }
 
-    private void ClearPlatforms()
+    private List<Vector3> GenerateHexGridPositions(int columns, int rows)
     {
-        foreach (var platformInfo in platformInfos)
+        List<Vector3> positions = new List<Vector3>();
+        float width = (hexSize + hexSpacing) * 2f;
+        float height = Mathf.Sqrt(3f) * (hexSize + hexSpacing);
+
+        for (int row = 0; row < rows; row++)
         {
-            if (platformInfo.platform != null)
-                Destroy(platformInfo.platform);
-            if (platformInfo.fish != null)
-                Destroy(platformInfo.fish);
+            for (int col = 0; col < columns; col++)
+            {
+                float x = col * width * 0.75f;
+                float z = row * height + (col % 2 == 0 ? 0 : height / 2);
+                positions.Add(new Vector3(x, 0, z));
+            }
         }
+
+        return positions;
     }
 }

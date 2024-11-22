@@ -1,10 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using DG.Tweening;
 
 namespace LowPolyWater
 {
-    public class UnifiedWaveManager : MonoBehaviour
+    public class WaveManager : MonoBehaviour
     {
         [Header("Wave Settings")]
         public float baseWaveHeight = 0.5f;
@@ -12,10 +11,6 @@ namespace LowPolyWater
         public float waveFrequencyIncreaseRate = 0.05f;
         public float waveLength = 0.75f;
         public Vector3 waveOriginPosition = new Vector3(0f, 0f, 0f);
-
-        [Header("Wave Followers")]
-        [Tooltip("물결에 따라 움직이게 할 프리팹들")]
-        public List<GameObject> waveFollowers;
 
         private float currentWaveHeight;
         private float currentWaveFrequency;
@@ -35,11 +30,6 @@ namespace LowPolyWater
             CreateMeshLowPoly(meshFilter);
             currentWaveHeight = baseWaveHeight;
             currentWaveFrequency = 0.5f;
-
-            foreach (var follower in waveFollowers)
-            {
-                SetupFollowerAnimation(follower);
-            }
         }
 
         void Update()
@@ -110,15 +100,6 @@ namespace LowPolyWater
             mesh.RecalculateNormals();
             mesh.MarkDynamic();
             meshFilter.mesh = mesh;
-        }
-
-        void SetupFollowerAnimation(GameObject follower)
-        {
-            follower.transform.DOKill(true);
-            Debug.Log("Setting up rotation animation for: " + follower.name);
-            follower.transform.DORotate(new Vector3(0, 0, 30), 0.5f) // 우선 테스트 회전
-                .SetEase(Ease.InOutSine)
-                .SetLoops(-1, LoopType.Yoyo);
         }
     }
 }
