@@ -1,0 +1,56 @@
+[33m0413c0b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mDevelopment[m[33m, [m[1;31morigin/Development[m[33m)[m HEAD@{0}: checkout: moving from 9b077d4dfc3407eb799f099d3e1279877c414501 to Development
+[33m9b077d4[m HEAD@{1}: commit: 11/23 회의 버전
+[33m0413c0b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mDevelopment[m[33m, [m[1;31morigin/Development[m[33m)[m HEAD@{2}: reset: moving to 0413c0bdadb446c8e7bf1abe39007cd8a980aab5
+[33m8597c72[m HEAD@{3}: checkout: moving from Development to 8597c721b7baba89840fb4147476adb96d290ccc
+[33m0413c0b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mDevelopment[m[33m, [m[1;31morigin/Development[m[33m)[m HEAD@{4}: commit: 임시용 커밋
+[33m55f9106[m HEAD@{5}: commit: 구간 별 레벨디자인에 따른 코드 태초마을
+[33m20029dd[m HEAD@{6}: commit: 오류 많은 버전 (임시용)
+[33m8597c72[m HEAD@{7}: commit: 타이틀 제목 및 팝업창 UI 최신화
+[33mc08e1bb[m HEAD@{8}: commit: 자잘한 수정 (완료)
+[33mc9a1f95[m HEAD@{9}: commit: 타이틀 화면 구현 (성공)
+[33mac5e259[m HEAD@{10}: commit: 물 위에 있을 때, 발판 위에 있을 때 스프라인트 표기 시도 (성공?)
+[33m6a8aa0e[m HEAD@{11}: reset: moving to 6a8aa0ef248a7c1163b16ac5b9084531163ac4ea
+[33m6a8aa0e[m HEAD@{12}: reset: moving to 6a8aa0ef248a7c1163b16ac5b9084531163ac4ea
+[33m6a8aa0e[m HEAD@{13}: commit: 데스존 (구현 중)
+[33mde48d45[m HEAD@{14}: commit: ESC 누를시 팝업창 생성 (완료)
+[33m613b081[m HEAD@{15}: commit: 두트윈을 활용한 빙하 연출 (완료, 그러나 보수 필요)
+[33m4ed596d[m HEAD@{16}: commit: 할로윈 테마 및 발판의 종류(L, M, S) 3가지를 할당, 발판 생성 로직 변경 (완료)
+[33m8076768[m HEAD@{17}: commit: 물 쉐이더 및 애니매이션 적용 (완료)
+[33m9f3f08d[m HEAD@{18}: commit: 리스타트, 타이틀 신, 빛 위치변경, 랜덤 로직 변경 (진행중)
+[33md0900e8[m HEAD@{19}: Branch: renamed refs/heads/Refactoring to refs/heads/Development
+[33md0900e8[m HEAD@{21}: commit: 타이틀 신 구현 (완료)
+[33m0947b8d[m HEAD@{22}: commit: 펭귄 움직임 개선 (해결)
+[33mc13669d[m[33m ([m[1;31morigin/Prototype[m[33m, [m[1;32mPrototype[m[33m)[m HEAD@{23}: checkout: moving from Prototype to Refactoring
+[33mc13669d[m[33m ([m[1;31morigin/Prototype[m[33m, [m[1;32mPrototype[m[33m)[m HEAD@{24}: checkout: moving from main to Prototype
+[33m1cd4413[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{25}: checkout: moving from Prototype to main
+[33mc13669d[m[33m ([m[1;31morigin/Prototype[m[33m, [m[1;32mPrototype[m[33m)[m HEAD@{26}: commit: 리팩토리 진행을 위해 복제한 스크립트를 Editor 폴더로 이동 (개선)
+[33m7691dc3[m HEAD@{27}: reset: moving to 7691dc376c5d57d8731a11148fa40d65366b0695
+[33m7691dc3[m HEAD@{28}: reset: moving to 7691dc376c5d57d8731a11148fa40d65366b0695
+[33m80c23cf[m HEAD@{29}: reset: moving to 80c23cf12fec0244320adabe5809798274db8611
+[33m80c23cf[m HEAD@{30}: reset: moving to 80c23cf12fec0244320adabe5809798274db8611
+[33m80c23cf[m HEAD@{31}: reset: moving to 80c23cf12fec0244320adabe5809798274db8611
+[33m7691dc3[m HEAD@{32}: pull origin Prototype: Fast-forward
+[33m80c23cf[m HEAD@{33}: reset: moving to 80c23cf12fec0244320adabe5809798274db8611
+[33m7691dc3[m HEAD@{34}: checkout: moving from 80c23cf12fec0244320adabe5809798274db8611 to Prototype
+[33m80c23cf[m HEAD@{35}: checkout: moving from Prototype to 80c23cf12fec0244320adabe5809798274db8611
+[33m7691dc3[m HEAD@{36}: reset: moving to HEAD
+[33m7691dc3[m HEAD@{37}: commit: 발판 인식 오류 Fixed Timestep 값을 조정 (해결)
+[33m80c23cf[m HEAD@{38}: reset: moving to 80c23cf12fec0244320adabe5809798274db8611
+[33m80c23cf[m HEAD@{39}: commit: [HexTile] 타일 회전 기능 추가 및 재생성 시 회전 유지
+[33m9b55dee[m HEAD@{40}: commit: [IcePlatform] 반사 효과 및 Material 기능 구현 (성공)
+[33mbfb93d0[m HEAD@{41}: commit: 전체적인 프로젝트 폴더 구조 정리 (개선)
+[33m3f1ba30[m HEAD@{42}: commit: 전체적인 코드의 가독성 이슈 (개선)
+[33m25e5062[m HEAD@{43}: reset: moving to 25e5062af9cf8c34eac8468f4be44de3dba3b28b
+[33m25e5062[m HEAD@{44}: commit: 불필요한 캐릭터 회전 오류 (해결)
+[33m6433121[m HEAD@{45}: commit: 폴가이즈처럼 발판을 밟은 후 일정 시간 뒤에 사라지는 로직 구현 (성공)
+[33m3d24248[m HEAD@{46}: commit: 폴가이즈 처럼, 발판을 밟은 일정 시간 후 사라지게 할려는 로직을 구상했으나 실패한 버전 회의 이후 시도 예정
+[33m7d432ad[m HEAD@{47}: checkout: moving from main to Prototype
+[33m1cd4413[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{48}: reset: moving to 1cd4413231c9a8a83dc4cba9142a38d601b5b87d
+[33m7d432ad[m HEAD@{49}: checkout: moving from Prototype to main
+[33m7d432ad[m HEAD@{50}: checkout: moving from main to Prototype
+[33m7d432ad[m HEAD@{51}: checkout: moving from Prototype to main
+[33m7d432ad[m HEAD@{52}: checkout: moving from main to Prototype
+[33m7d432ad[m HEAD@{53}: checkout: moving from Prototype to main
+[33m7d432ad[m HEAD@{54}: checkout: moving from main to Prototype
+[33m7d432ad[m HEAD@{55}: commit: 육각형 타일 FBX 추가, 타일을 육각형으로 변경 및 레벨디자인 편의성을 위해 인스펙터 창을 직관적으로 표기 및 정리함
+[33m1cd4413[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{56}: commit (initial): Initial commit
