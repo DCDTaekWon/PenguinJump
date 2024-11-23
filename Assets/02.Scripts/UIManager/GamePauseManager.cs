@@ -50,6 +50,8 @@ public class GamePauseManager : MonoBehaviour
         {
             resumeButton.onClick.AddListener(ResumeGame);
         }
+
+        Debug.Log("GamePauseManager initialized.");
     }
 
     void Update()
@@ -59,10 +61,12 @@ public class GamePauseManager : MonoBehaviour
         {
             if (isPaused)
             {
+                Debug.Log("ESC pressed: Resuming game.");
                 ResumeGame();
             }
             else
             {
+                Debug.Log("ESC pressed: Pausing game.");
                 PauseGame();
             }
         }
@@ -71,6 +75,9 @@ public class GamePauseManager : MonoBehaviour
     // 게임 일시정지
     public void PauseGame()
     {
+        if (isPaused) return; // 이미 일시정지 상태라면 무시
+
+        Debug.Log("PauseGame called.");
         isPaused = true;
         Time.timeScale = 0f; // 게임 시간 정지
         if (pausePanel != null)
@@ -84,6 +91,9 @@ public class GamePauseManager : MonoBehaviour
     // 게임 재개
     public void ResumeGame()
     {
+        if (!isPaused) return; // 이미 재개 상태라면 무시
+
+        Debug.Log("ResumeGame called.");
         isPaused = false;
         Time.timeScale = 1f; // 게임 시간 정상화
         if (pausePanel != null)
@@ -100,6 +110,7 @@ public class GamePauseManager : MonoBehaviour
         isSoundOn = !isSoundOn;
         AudioListener.volume = isSoundOn ? 1f : 0f;
         UpdateSoundButtonImage();
+        Debug.Log("Sound toggled. isSoundOn: " + isSoundOn);
     }
 
     // 소리 버튼 이미지 업데이트
@@ -114,6 +125,7 @@ public class GamePauseManager : MonoBehaviour
     // 타이틀로 이동
     public void RestartToCutscene()
     {
+        Debug.Log("Restart button clicked. Returning to title scene.");
         Time.timeScale = 1f; // 씬 이동 전 시간 정상화
         SceneManager.LoadScene("Title"); // 타이틀 씬 이름으로 교체
     }

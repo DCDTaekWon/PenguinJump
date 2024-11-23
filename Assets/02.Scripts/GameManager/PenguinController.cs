@@ -1,9 +1,11 @@
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody), typeof(Animator), typeof(AudioSource))]
 public class PenguinController : MonoBehaviour
 {
+    [Header("Movement Settings")]
     public float moveSpeed = 5f;
+
+    [Header("Jump Settings")]
     public float maxJumpForce = 10f;
     public float minJumpForce = 2f;
     public AudioClip jumpSound;
@@ -15,24 +17,27 @@ public class PenguinController : MonoBehaviour
     private bool isGrounded = true;
     private bool jumpRequested = false;
     private bool isJumping = false;
-    private bool moveKeyPressed = false;
-
     private float jumpHoldTime = 0f;
     private float jumpRequestTime = 0f;
 
+    [Header("References")]
     public CameraFollow cameraFollow;
     public DeathPopupManager deathPopupManager;
 
+    [Header("Indicator Settings")]
     public GameObject groundPrefab; // Ground 인디케이터 프리팹
     public GameObject waterPrefab;  // Water 인디케이터 프리팹
     private GameObject currentIndicator; // 현재 활성화된 인디케이터
-
     private float groundOffsetY = 0.1f;
 
     public LayerMask WaterLayer;
     public LayerMask GroundLayer;
 
     private Camera mainCamera;
+
+    [Header("Mobile Settings")]
+    private JoystickHandler joystick; // 가상 조이스틱
+    public bool isMobile = true;      // 모바일 환경 여부 설정 (테스트용)
 
     void Start()
     {
@@ -45,6 +50,11 @@ public class PenguinController : MonoBehaviour
         rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
         mainCamera = Camera.main;
+
+        if (isMobile)
+        {
+            joystick = FindObjectOfType<JoystickHandler>();
+        }
     }
 
     void Update()
@@ -56,18 +66,27 @@ public class PenguinController : MonoBehaviour
 
     void FixedUpdate()
     {
-        ApplyJump();
+        // 점프는 FixedUpdate에서 처리하지 않음, 입력과 ApplyJump가 Update로 처리됨
     }
 
     private void HandleMovement()
     {
-        float moveX = Input.GetAxis("Horizontal");
-        float moveZ = Input.GetAxis("Vertical");
+        float moveX, moveZ;
+
+        if (!isMobile)
+        {
+            moveX = Input.GetAxis("Horizontal");
+            moveZ = Input.GetAxis("Vertical");
+        }
+        else
+        {
+            Vector2 joystickInput = joystick.InputVector;
+            moveX = joystickInput.x;
+            moveZ = joystickInput.y;
+        }
 
         Vector3 moveDirection = new Vector3(moveX, 0, moveZ);
-        moveKeyPressed = moveDirection.magnitude > 0.1f;
-
-        if (moveKeyPressed)
+        if (moveDirection.magnitude > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
@@ -79,33 +98,50 @@ public class PenguinController : MonoBehaviour
 
     private void HandleJumpInput()
     {
+        // 점프 시작
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
-            jumpRequested = true;
-            jumpRequestTime = Time.time;
-            cameraFollow.SetJumping(true);
+            RequestJump();
         }
 
+        // 점프 충전
         if (jumpRequested && Input.GetKey(KeyCode.Space))
         {
             jumpHoldTime = Time.time - jumpRequestTime;
+        }
+
+        // 점프 실행
+        if (Input.GetKeyUp(KeyCode.Space) && jumpRequested)
+        {
+            ApplyJump();
         }
     }
 
     private void ApplyJump()
     {
-        if (jumpRequested && !Input.GetKey(KeyCode.Space))
+        if (jumpRequested)
         {
             float jumpForce = Mathf.Clamp(minJumpForce + (jumpHoldTime * maxJumpForce), minJumpForce, maxJumpForce);
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
 
             jumpRequested = false;
-            isGrounded = false;
             jumpHoldTime = 0f;
+            isGrounded = false;
             isJumping = true;
+
             animator.SetBool("isJumping", true);
             audioSource.PlayOneShot(jumpSound);
             cameraFollow.SetJumping(false);
+        }
+    }
+
+    public void RequestJump()
+    {
+        if (isGrounded)
+        {
+            jumpRequested = true;
+            jumpRequestTime = Time.time;
+            cameraFollow.SetJumping(true);
         }
     }
 
@@ -114,11 +150,8 @@ public class PenguinController : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground"))
         {
             isGrounded = true;
-            if (isJumping)
-            {
-                isJumping = false;
-                animator.SetBool("isJumping", false);
-            }
+            isJumping = false;
+            animator.SetBool("isJumping", false);
         }
     }
 
@@ -140,7 +173,6 @@ public class PenguinController : MonoBehaviour
             Vector3 indicatorPosition = hit.point;
             indicatorPosition.y += isGrounded ? -groundOffsetY : groundOffsetY;
 
-            // 현재 활성화된 인디케이터가 있는지 확인 후 교체
             if (((1 << hit.collider.gameObject.layer) & WaterLayer) != 0)
             {
                 SetIndicator(waterPrefab, indicatorPosition);
@@ -150,7 +182,6 @@ public class PenguinController : MonoBehaviour
                 SetIndicator(groundPrefab, indicatorPosition);
             }
 
-            // 인디케이터를 카메라 방향으로 회전
             currentIndicator.transform.LookAt(mainCamera.transform);
             currentIndicator.transform.rotation = Quaternion.Euler(90, currentIndicator.transform.rotation.eulerAngles.y, 0);
         }
@@ -162,7 +193,6 @@ public class PenguinController : MonoBehaviour
 
     private void SetIndicator(GameObject prefab, Vector3 position)
     {
-        // 새로운 인디케이터가 필요하면 기존 인디케이터 삭제 및 새로 생성
         if (currentIndicator == null || currentIndicator.name != prefab.name)
         {
             if (currentIndicator != null)
