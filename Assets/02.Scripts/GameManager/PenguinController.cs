@@ -45,7 +45,7 @@ public class PenguinController : MonoBehaviour
 
     [Header("Sensitivity Settings")]
     public float joystickSensitivity = 1f; // 기본 민감도 값
-
+    private FeverTimeManager feverTimeManager; // FeverTimeManager 참조
 
     /// <summary>
     /// 게임 오버 UI 플래그
@@ -68,6 +68,7 @@ public class PenguinController : MonoBehaviour
             joystick = FindObjectOfType<JoystickHandler>();
         }
         scoreManager = FindObjectOfType<SecureScoreManager>();
+        feverTimeManager = FindObjectOfType<FeverTimeManager>(); // FeverTimeManager 연결
     }
 
 
@@ -193,10 +194,10 @@ public class PenguinController : MonoBehaviour
             audioSource.PlayOneShot(jumpSound);
             cameraFollow.SetJumping(false);
 
-            // 점프 성공 시 점수 증가
             if (scoreManager != null)
             {
-                scoreManager.AddScore(50); // 점프할 때 100점 추가
+                int jumpScore = feverTimeManager != null && feverTimeManager.IsFeverActive ? 500 : 50;
+                scoreManager.AddScore(jumpScore);
             }
         }
     }
