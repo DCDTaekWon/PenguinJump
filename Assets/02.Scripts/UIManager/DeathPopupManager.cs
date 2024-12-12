@@ -1,85 +1,93 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using TMPro;
 
 public class DeathPopupManager : MonoBehaviour
 {
-    [SerializeField] private GameObject deathPopupPanel;
-    [SerializeField] private Button soundToggleButton;
-    [SerializeField] private Sprite soundOnSprite;
-    [SerializeField] private Sprite soundOffSprite;
-    [SerializeField] private TMP_Text finalScoreText;
-    [SerializeField] private Button restartButton;
-    [SerializeField] private Button mainMenuButton;
+    [Tooltip("일시정지 팝업 패널")]
+    public GameObject DeathPanel;
 
-    private bool isSoundOn = true;
-    private SecureScoreManager scoreManager;
+    [SerializeField] private GameObject deathPopupPanel;
+    [Tooltip("타이틀로 이동하는 버튼")]
+    public Button restartButton;
+    [Tooltip("게임 재개 버튼")]
+    public Button resumeButton;
+
+    private bool isPaused = false;
 
     void Start()
     {
-        if (deathPopupPanel != null)
+        // 시작 시 팝업 패널 비활성화
+        if (DeathPanel != null)
         {
-            deathPopupPanel.SetActive(false);
+            DeathPanel.SetActive(false);
         }
 
-        if (soundToggleButton != null)
-        {
-            isSoundOn = AudioListener.volume > 0;
-            UpdateSoundButtonImage();
-            soundToggleButton.onClick.AddListener(ToggleSound);
-        }
-
+        // 타이틀로 이동 버튼 설정
         if (restartButton != null)
         {
-            restartButton.onClick.AddListener(RestartGame);
+            restartButton.onClick.AddListener(RestartToCutscene);
         }
 
-        if (mainMenuButton != null)
+        // 게임 재개 버튼 설정
+        if (resumeButton != null)
         {
-            mainMenuButton.onClick.AddListener(GoToMainMenu);
+            resumeButton.onClick.AddListener(ResumeGame);
         }
 
-        // ScoreManager 찾기
-        scoreManager = FindObjectOfType<SecureScoreManager>();
+        Debug.Log("GamePauseManager initialized.");
     }
 
-    private void ToggleSound()
-    {
-        isSoundOn = !isSoundOn;
-        AudioListener.volume = isSoundOn ? 1f : 0f;
-        UpdateSoundButtonImage();
-    }
-
-    private void UpdateSoundButtonImage()
-    {
-        if (soundToggleButton != null)
-        {
-            soundToggleButton.image.sprite = isSoundOn ? soundOnSprite : soundOffSprite;
-        }
-    }
 
     public void ShowDeathPopup()
     {
-        if (deathPopupPanel != null && scoreManager != null)
+        if (isPaused)
         {
-            Time.timeScale = 0f;
-            deathPopupPanel.SetActive(true);
-
-            int currentScore = scoreManager.CurrentScore;
-            finalScoreText.text = "최종 점수: " + currentScore;
+            // 팝업이 이미 활성화되어 있다면 추가 작업 없이 return
+            return;
         }
+
+        Debug.Log("팝업 활성화!");
+        isPaused = true;
+        Time.timeScale = 0f; // 게임 일시정지
+
+        if (deathPopupPanel != null)
+        {
+            deathPopupPanel.SetActive(true); // 팝업 활성화
+        }
+
+        Cursor.lockState = CursorLockMode.None; // 마우스 잠금 해제
+        Cursor.visible = true; // 마우스 표시
     }
 
-    private void RestartGame()
+    public void ResumeGame()
     {
-        Time.timeScale = 1f;
+        if (!isPaused) return; // 이미 재개 상태라면 무시
+
+        Debug.Log("ResumeGame called.");
+        isPaused = false;
+        Time.timeScale = 1f; // 게임 시간 정상화
+
+        // 현재 씬을 다시 로드하여 게임을 재시작
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+
+        // 팝업 패널 비활성화
+        if (
+            DeathPanel != null)
+        {
+            DeathPanel.SetActive(false);
+        }
+
+        // 마우스 커서 처리
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
-    private void GoToMainMenu()
+
+    public void RestartToCutscene()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene("Title");
+        Debug.Log("Restart button clicked. Returning to title scene.");
+        Time.timeScale = 1f; // 씬 이동 전 시간 정상화
+        SceneManager.LoadScene("Title"); // 타이틀 씬 이름으로 교체
     }
 }

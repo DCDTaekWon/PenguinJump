@@ -29,7 +29,7 @@ public class SecureScoreManager : MonoBehaviour
         if (newScore != displayedScore)
         {
             displayedScore = newScore;
-            scoreText.text = "Score: " + displayedScore.ToString();
+            scoreText.text = displayedScore.ToString();
 
             if (displayedScore > highScore)
             {
@@ -42,19 +42,19 @@ public class SecureScoreManager : MonoBehaviour
 
     private void UpdateHighScoreText()
     {
-        highScoreText.text = "High Score: " + highScore.ToString();
+        highScoreText.text = highScore.ToString();
     }
 
     private void SaveHighScore(int score)
     {
         string encryptedScore = Convert.ToBase64String(BitConverter.GetBytes(score));
-        PlayerPrefs.SetString("HighScore", encryptedScore);
+        PlayerPrefs.SetString("", encryptedScore);
         PlayerPrefs.Save();
     }
 
     private int LoadHighScore()
     {
-        string encryptedScore = PlayerPrefs.GetString("HighScore", "");
+        string encryptedScore = PlayerPrefs.GetString("");
         if (!string.IsNullOrEmpty(encryptedScore))
         {
             try

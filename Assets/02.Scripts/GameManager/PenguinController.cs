@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using System.Collections;
 public class PenguinController : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -9,16 +9,18 @@ public class PenguinController : MonoBehaviour
     public float maxJumpForce = 10f;
     public float minJumpForce = 2f;
     public AudioClip jumpSound;
+    public AudioClip deathSound;
+    private AudioSource audioSource; // 플레이어의 AudioSource
 
     private Rigidbody rb;
     private Animator animator;
-    private AudioSource audioSource;
 
-    private bool isGrounded = true;
-    private bool jumpRequested = false;
-    private bool isJumping = false;
-    private float jumpHoldTime = 0f;
-    private float jumpRequestTime = 0f;
+
+    public bool isGrounded = true;
+    public bool jumpRequested = false;
+    public bool isJumping = false;
+    public float jumpHoldTime = 0f;
+    public float jumpRequestTime = 0f;
 
     [Header("References")]
     public CameraFollow cameraFollow;
@@ -39,11 +41,15 @@ public class PenguinController : MonoBehaviour
     private JoystickHandler joystick; // 가상 조이스틱
     public bool isMobile = true;      // 모바일 환경 여부 설정 (테스트용)
 
+    /// <summary>
+    /// 게임 오버 UI 플래그
+    /// </summary>
+    private bool isGameFlag = false;
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
-        audioSource = GetComponent<AudioSource>();
+        audioSource = GetComponent<AudioSource>(); // 현재 오브젝트의 AudioSource 가져오기
 
         rb.isKinematic = false;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
@@ -57,17 +63,42 @@ public class PenguinController : MonoBehaviour
         }
     }
 
+
+
     void Update()
     {
+        // Rigidbody가 Kinematic 상태이면 이동 및 점프 로직 비활성화
+        if (rb.isKinematic) return;
+
         HandleMovement();
-        HandleJumpInput();
+
+        if (!isMobile)
+        {
+            HandleJumpInput(); // 기존 키보드 점프 처리
+        }
+        else
+        {
+            HandleMobileJumpInput(); // 모바일 점프 처리
+        }
+
         UpdateIndicator();
+        StopGame();
     }
 
-    void FixedUpdate()
+
+    private void HandleMobileJumpInput()
     {
-        // 점프는 FixedUpdate에서 처리하지 않음, 입력과 ApplyJump가 Update로 처리됨
+        // JumpButton 스크립트 가져오기
+        JumpButton jumpButton = FindObjectOfType<JumpButton>();
+        if (jumpButton == null) return;
+
+        // 점프 충전
+        if (jumpButton.IsButtonHeld() && jumpRequested)
+        {
+            jumpHoldTime = Time.time - jumpRequestTime;
+        }
     }
+
 
     private void HandleMovement()
     {
@@ -98,34 +129,38 @@ public class PenguinController : MonoBehaviour
 
     private void HandleJumpInput()
     {
-        // 점프 시작
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        if (!isMobile)
         {
-            RequestJump();
-        }
+            // 키보드 입력 처리
+            if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+            {
+                RequestJump();
+            }
 
-        // 점프 충전
-        if (jumpRequested && Input.GetKey(KeyCode.Space))
-        {
-            jumpHoldTime = Time.time - jumpRequestTime;
-        }
+            if (jumpRequested && Input.GetKey(KeyCode.Space))
+            {
+                jumpHoldTime = Time.time - jumpRequestTime;
+            }
 
-        // 점프 실행
-        if (Input.GetKeyUp(KeyCode.Space) && jumpRequested)
-        {
-            ApplyJump();
+            if (Input.GetKeyUp(KeyCode.Space) && jumpRequested)
+            {
+                ApplyJump();
+            }
         }
+        // 모바일 입력은 JumpButton.cs에서 처리
     }
 
-    private void ApplyJump()
+
+    public void ApplyJump()
     {
         if (jumpRequested)
         {
+            // 점프 힘 계산
             float jumpForce = Mathf.Clamp(minJumpForce + (jumpHoldTime * maxJumpForce), minJumpForce, maxJumpForce);
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
 
             jumpRequested = false;
-            jumpHoldTime = 0f;
+            jumpHoldTime = 0f; // 충전 시간 초기화
             isGrounded = false;
             isJumping = true;
 
@@ -134,6 +169,7 @@ public class PenguinController : MonoBehaviour
             cameraFollow.SetJumping(false);
         }
     }
+
 
     public void RequestJump()
     {
@@ -157,11 +193,64 @@ public class PenguinController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        Debug.Log($"OnTriggerEnter 호출됨! 충돌 대상: {other.gameObject.name}");
+
         if (other.CompareTag("DeathZone"))
         {
-            deathPopupManager?.ShowDeathPopup();
+            Debug.Log("DeathZone과 충돌!");
+
+            // 사망 애니메이션 실행
+            animator.SetTrigger("Death");
+            audioSource.PlayOneShot(deathSound);
+
+            // Eyes Layer의 Weight를 1로 설정 (눈 감기 상태 활성화)
+            animator.SetLayerWeight(1, 1f);
+
+            // SoundManager 오브젝트 비활성화
+            GameObject soundManager = GameObject.Find("SoundManager");
+            if (soundManager != null)
+            {
+                soundManager.SetActive(false); // SoundManager 비활성화
+                Debug.Log("SoundManager 비활성화됨");
+            }
+            else
+            {
+                Debug.LogWarning("SoundManager 오브젝트를 찾을 수 없습니다!");
+            }
+
+            // 3초 후 게임 멈춤
+            StartCoroutine(StopGameAfterDelay(2f));
         }
     }
+
+    private IEnumerator StopGameAfterDelay(float delay)
+    {
+        // 게임을 멈추기 전 잠시 대기
+        yield return new WaitForSeconds(delay);
+
+        // 게임을 멈추기 위한 플래그를 true로 설정
+        if (!isGameFlag) // 이미 게임이 멈춘 상태가 아니라면
+        {
+            isGameFlag = true; // 게임 멈추기
+        }
+    }
+
+    private void StopGame()
+    {
+        // isGameFlag가 false일 때만 게임 멈추기
+        if (!isGameFlag) return;
+
+        // 게임 멈춤 로직
+        Debug.Log("Game Stopped!");
+        deathPopupManager?.ShowDeathPopup();
+
+        // 이제는 더 이상 반복적으로 호출되지 않도록 처리
+        isGameFlag = false; // 게임을 멈춘 후 플래그를 초기화하여 반복을 방지
+    }
+
+
+
+
 
     private void UpdateIndicator()
     {
