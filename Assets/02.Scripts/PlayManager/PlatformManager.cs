@@ -6,67 +6,33 @@ using DG.Tweening;
 public class PlatformManager : MonoBehaviour
 {
     [Header("Tile Settings")]
-    [Tooltip("생성할 발판의 프리팹들")]
     public GameObject[] platformPrefabs; // 여러 프리팹을 받을 수 있도록 배열로 수정
-
-    [Tooltip("발판의 행(row) 개수")]
     public int rows = 5;
-
-    [Tooltip("발판의 열(column) 개수")]
     public int columns = 5;
-
-    [Tooltip("발판의 기본 크기 (반지름)")]
     public float hexSize = 1.0f;
-
-    [Tooltip("발판 간의 간격 (hexSize를 기준으로)")]
     public float hexSpacing = 0.1f;
-
-    [Tooltip("발판의 회전 각도")]
     public Vector3 platformRotation = Vector3.zero;
-
-    [Tooltip("발판의 기본 색상")]
     public Color normalColor = Color.white;
-
-    [Tooltip("발판이 경고 상태일 때 색상")]
     public Color warningColor = Color.red;
 
     [Header("Difficulty and Timing")]
-    [Tooltip("초기 활성화할 발판 수")]
     public int initialActivePlatforms = 5;
-
-    [Tooltip("최소 활성화할 발판 수 (모든 발판이 사라지지 않도록 유지)")]
     public int minActivePlatforms = 1;
-
-    [Tooltip("초기 발판의 생존 시간")]
     public float initialPlatformLifetime = 3f;
-
-    [Tooltip("발판이 사라진 후 재생성까지의 대기 시간")]
     public float respawnDelay = 3f;
-
-    [Tooltip("발판이 경고 상태를 유지하는 시간")]
     public float warningDuration = 1f;
-
-    [Tooltip("랜덤 발판 활성화 주기 (초 단위)")]
     public float activationInterval = 2f;
-
-    [Tooltip("발판 수 줄이는 간격 (초 단위)")]
     public float reduceInterval = 10f;
-
-    [Tooltip("발판의 최소 생존 시간")]
     public float minPlatformLifetime = 1f;
-
-    [Tooltip("한 번에 파괴될 수 있는 최대 발판 수")]
     public int maxPlatformsToDestroy = 1;
-
-    [Tooltip("난이도가 올라감에 따라 파괴될 수 있는 최대 발판 수 제한")]
     public int maxPlatformDestroyLimit = 12;
 
     [Header("Player Settings")]
-    [Tooltip("플레이어 캐릭터의 Transform")]
     public Transform player;
 
     private List<PlatformInfo> platformInfos = new List<PlatformInfo>();
     private float currentPlatformLifetime;
+    private int currentDifficultyLevel = 0; // 난이도 단계 (0 = Easy, 1 = Medium, 2 = Hard)
 
     private enum PlatformState
     {
@@ -76,7 +42,6 @@ public class PlatformManager : MonoBehaviour
         Break    // 비활성화 상태
     }
 
-    // 발판 정보 구조체
     private class PlatformInfo
     {
         public GameObject platform;
@@ -95,18 +60,17 @@ public class PlatformManager : MonoBehaviour
 
     private void Start()
     {
-        // 발판 생성 및 초기 설정
         SpawnHexagonalPlatforms();
         currentPlatformLifetime = initialPlatformLifetime;
 
-        // 초기 발판 활성화 및 코루틴 시작
+        Debug.Log("코루틴 시작!");
+        StartCoroutine(UpdateDifficultyAndParameters());
         ActivateInitialPlatforms();
         StartCoroutine(ActivateRandomPlatforms());
         StartCoroutine(DecreaseActivePlatforms());
         StartCoroutine(PlatformLifecycle());
     }
 
-    // 발판 그리드 생성
     private void SpawnHexagonalPlatforms()
     {
         float width = (hexSize + hexSpacing) * 2;
@@ -134,7 +98,7 @@ public class PlatformManager : MonoBehaviour
                 GameObject platform = Instantiate(prefabToSpawn, spawnPosition, Quaternion.Euler(platformRotation));
                 platform.layer = LayerMask.NameToLayer("GroundLayer");
                 MeshRenderer renderer = platform.GetComponent<MeshRenderer>();
-                platformInfos.Add(new PlatformInfo(platform, renderer, spawnPosition)); // 초기 위치 저장
+                platformInfos.Add(new PlatformInfo(platform, renderer, spawnPosition));
 
                 platform.SetActive(false);
             }
@@ -157,11 +121,115 @@ public class PlatformManager : MonoBehaviour
             activatedPlatforms.Add(platformInfo);
         }
 
-        // 활성화된 발판 중 하나를 랜덤으로 선택하여 펭귄 배치
         if (activatedPlatforms.Count > 0)
         {
             PlacePenguinOnPlatform(activatedPlatforms[Random.Range(0, activatedPlatforms.Count)]);
         }
+    }
+
+    private IEnumerator UpdateDifficultyAndParameters()
+    {
+        for (int i = 0; i < 5; i++) // 총 5회 업데이트
+        {
+            Debug.Log($"루프 {i} 실행 대기 중");
+            yield return new WaitForSeconds(36f); // 36초 간격
+
+            Debug.Log($"루프 {i} 실행 완료");
+
+            switch (i)
+            {
+                case 0:
+                    currentDifficultyLevel = 0;
+                    currentPlatformLifetime = 3.0f;
+                    activationInterval = 2.0f;
+                    reduceInterval = 7.0f;
+                    break;
+
+                case 1:
+                    currentDifficultyLevel = 0;
+                    currentPlatformLifetime = 2.5f;
+                    activationInterval = 1.8f;
+                    reduceInterval = 6.0f;
+                    break;
+
+                case 2:
+                    currentDifficultyLevel = 1;
+                    currentPlatformLifetime = 2.0f;
+                    activationInterval = 1.6f;
+                    reduceInterval = 6.0f;
+                    break;
+
+                case 3:
+                    currentDifficultyLevel = 2;
+                    currentPlatformLifetime = 1.5f;
+                    activationInterval = 1.4f;
+                    reduceInterval = 5.0f;
+                    break;
+
+                case 4:
+                    currentDifficultyLevel = 3;
+                    currentPlatformLifetime = 1.0f;
+                    activationInterval = 1.2f;
+                    reduceInterval = 5.0f;
+                    break;
+            }
+
+            Debug.Log($"난이도 업데이트: 단계 {currentDifficultyLevel}, 생존 시간 {currentPlatformLifetime}, 활성화 주기 {activationInterval}, 파괴 간격 {reduceInterval}");
+        }
+    }
+
+    private GameObject GetPlatformPrefab()
+    {
+        switch (currentDifficultyLevel)
+        {
+            case 0:
+                return platformPrefabs[0];
+            case 1:
+                return platformPrefabs[Random.Range(0, 2)];
+            case 2:
+                return platformPrefabs[Random.Range(1, 2)];
+            case 3:
+                return platformPrefabs[2];
+            default:
+                return platformPrefabs[0];
+        }
+    }
+
+    private void ActivatePlatform(PlatformInfo platformInfo)
+    {
+        GameObject prefabToSpawn = GetPlatformPrefab();
+        platformInfo.platform = Instantiate(prefabToSpawn, platformInfo.initialPosition, Quaternion.Euler(platformRotation));
+        platformInfo.renderer = platformInfo.platform.GetComponent<Renderer>();
+
+        platformInfo.platform.SetActive(true);
+        platformInfo.renderer.material.color = normalColor;
+        platformInfo.state = PlatformState.Normal;
+
+        platformInfo.platform.transform.DOMoveY(platformInfo.initialPosition.y, 3f)
+            .SetEase(Ease.OutBounce);
+
+        Debug.Log($"활성화된 발판 (난이도 {currentDifficultyLevel}): {platformInfo.platform.name}");
+    }
+
+    private void PlacePenguinOnPlatform(PlatformInfo platformInfo)
+    {
+        Vector3 penguinPosition = platformInfo.platform.transform.position;
+        player.position = penguinPosition + new Vector3(0, 1f, 0);
+        Debug.Log("펭귄 초기 위치 설정: " + penguinPosition);
+    }
+
+    private Vector3 HexToWorldPosition(int col, int row, float width, float height)
+    {
+        float x = col * width * 0.75f;
+        float z = row * height + (col % 2 == 0 ? 0 : height / 2);
+        return new Vector3(x, 0, z);
+    }
+
+    private void SetPlatformWarning(PlatformInfo platformInfo)
+    {
+        platformInfo.renderer.material.color = warningColor;
+        platformInfo.state = PlatformState.Warning;
+        Debug.Log("발판 Warning 상태로 변경: " + platformInfo.platform.name);
     }
 
     private IEnumerator ActivateRandomPlatforms()
@@ -171,7 +239,7 @@ public class PlatformManager : MonoBehaviour
             yield return new WaitForSeconds(activationInterval);
 
             int currentlyActiveCount = platformInfos.FindAll(p => p.state == PlatformState.Normal).Count;
-            if (currentlyActiveCount < minActivePlatforms) continue; // 최소 개수 유지
+            if (currentlyActiveCount < minActivePlatforms) continue;
 
             int platformsToActivate = Mathf.Min(initialActivePlatforms - currentlyActiveCount, platformInfos.Count);
             List<PlatformInfo> breakPlatforms = platformInfos.FindAll(p => p.state == PlatformState.Break);
@@ -222,51 +290,16 @@ public class PlatformManager : MonoBehaviour
         }
     }
 
-    private void ActivatePlatform(PlatformInfo platformInfo)
-    {
-        platformInfo.platform.SetActive(true);
-        platformInfo.platform.transform.position = platformInfo.initialPosition + new Vector3(0, -2f, 0); // 초기 위치 기준 아래로 이동
-        platformInfo.renderer.material.color = normalColor;
-        platformInfo.state = PlatformState.Normal;
-
-        platformInfo.platform.transform.DOMoveY(platformInfo.initialPosition.y, 3f) // 초기 위치로 상승
-            .SetEase(Ease.OutBounce);
-
-        Debug.Log($"활성화된 발판: {platformInfo.platform.name}, 위치: {platformInfo.platform.transform.position}");
-    }
-
-    private void PlacePenguinOnPlatform(PlatformInfo platformInfo)
-    {
-        Vector3 penguinPosition = platformInfo.platform.transform.position;
-        player.position = penguinPosition + new Vector3(0, 1f, 0); // 약간 위로 이동
-        Debug.Log("펭귄 초기 위치 설정: " + penguinPosition);
-    }
-
-    private Vector3 HexToWorldPosition(int col, int row, float width, float height)
-    {
-        float x = col * width * 0.75f;
-        float z = row * height + (col % 2 == 0 ? 0 : height / 2);
-        return new Vector3(x, 0, z);
-    }
-
-    private void SetPlatformWarning(PlatformInfo platformInfo)
-    {
-        platformInfo.renderer.material.color = warningColor; // 발판 색상을 경고 색상으로 변경
-        platformInfo.state = PlatformState.Warning;
-        Debug.Log("발판 Warning 상태로 변경: " + platformInfo.platform.name);
-    }
-
     private IEnumerator DisableAndRespawnPlatform(PlatformInfo platformInfo)
     {
-        yield return new WaitForSeconds(warningDuration); // 경고 시간이 지나면
-        platformInfo.platform.transform.DOMoveY(platformInfo.initialPosition.y - 2f, 1f) // 초기 위치 기준 하강
+        yield return new WaitForSeconds(warningDuration);
+        platformInfo.platform.transform.DOMoveY(platformInfo.initialPosition.y - 2f, 1f)
             .SetEase(Ease.InQuad)
             .OnComplete(() =>
             {
                 platformInfo.platform.SetActive(false);
                 platformInfo.state = PlatformState.Break;
 
-                // 초기 위치로 복원
                 platformInfo.platform.transform.position = platformInfo.initialPosition;
                 Debug.Log("발판 비활성화 및 초기화 완료: " + platformInfo.platform.name);
             });

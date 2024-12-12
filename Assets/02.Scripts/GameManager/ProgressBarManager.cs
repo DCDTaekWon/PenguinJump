@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement; // SceneManager 사용
 
 public class ProgressBarManager : MonoBehaviour
 {
@@ -26,14 +27,8 @@ public class ProgressBarManager : MonoBehaviour
         while (elapsedTime < duration)
         {
             elapsedTime += Time.deltaTime;
-
-            // 진행 비율 계산
             float progress = elapsedTime / duration;
-
-            // 로컬 X좌표를 선형 보간
             float newX = Mathf.Lerp(startX, targetX, progress);
-
-            // 스프라이트 위치 갱신 (로컬 좌표 기준)
             Vector3 currentPosition = spriteTransform.localPosition;
             currentPosition.x = newX;
             spriteTransform.localPosition = currentPosition;
@@ -41,9 +36,22 @@ public class ProgressBarManager : MonoBehaviour
             yield return null; // 다음 프레임까지 대기
         }
 
-        // 마지막 위치 보정
         Vector3 finalPosition = spriteTransform.localPosition;
         finalPosition.x = targetX;
         spriteTransform.localPosition = finalPosition;
+
+        // SecureScoreManager의 OnGameClear 호출
+        SecureScoreManager scoreManager = FindObjectOfType<SecureScoreManager>();
+        if (scoreManager != null)
+        {
+            scoreManager.OnGameClear(); // 인스턴스를 통해 호출
+        }
+        else
+        {
+            Debug.LogError("SecureScoreManager를 찾을 수 없습니다!");
+        }
+
+        // Clear 씬으로 이동
+        SceneManager.LoadScene("Clear");
     }
 }

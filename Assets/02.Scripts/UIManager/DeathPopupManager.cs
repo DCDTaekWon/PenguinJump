@@ -79,8 +79,8 @@ public class DeathPopupManager : MonoBehaviour
         }
 
         // 付快胶 目辑 贸府
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        //Cursor.lockState = CursorLockMode.Locked;
+        //Cursor.visible = false;
     }
 
 

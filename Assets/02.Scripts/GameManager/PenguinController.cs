@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement;
 public class PenguinController : MonoBehaviour
 {
     [Header("Movement Settings")]
@@ -40,6 +41,11 @@ public class PenguinController : MonoBehaviour
     [Header("Mobile Settings")]
     private JoystickHandler joystick; // 가상 조이스틱
     public bool isMobile = true;      // 모바일 환경 여부 설정 (테스트용)
+    public SecureScoreManager scoreManager; // SecureScoreManager 참조
+
+    [Header("Sensitivity Settings")]
+    public float joystickSensitivity = 1f; // 기본 민감도 값
+
 
     /// <summary>
     /// 게임 오버 UI 플래그
@@ -61,6 +67,7 @@ public class PenguinController : MonoBehaviour
         {
             joystick = FindObjectOfType<JoystickHandler>();
         }
+        scoreManager = FindObjectOfType<SecureScoreManager>();
     }
 
 
@@ -103,22 +110,31 @@ public class PenguinController : MonoBehaviour
     // HandleMovement 메서드 수정
     private void HandleMovement()
     {
-        float moveX, moveZ;
+        float moveX = 0f, moveZ = 0f;
 
         if (!isMobile)
         {
             moveX = Input.GetAxis("Horizontal");
             moveZ = Input.GetAxis("Vertical");
         }
-        else
+        else if (joystick != null)
         {
             Vector2 joystickInput = joystick.InputVector;
-            moveX = joystickInput.x;
-            moveZ = joystickInput.y;
+            moveX = joystickInput.x * joystickSensitivity; // 민감도 적용
+            moveZ = joystickInput.y * joystickSensitivity; // 민감도 적용
         }
 
+        // 이동 방향 계산
         Vector3 moveDirection = new Vector3(moveX, 0, moveZ).normalized;
         Vector3 targetVelocity = moveDirection * moveSpeed;
+
+        // 움직임 멈춤 처리: 조이스틱 입력이 없을 경우
+        if (moveDirection.magnitude < 0.1f)
+        {
+            rb.velocity = new Vector3(0, rb.velocity.y, 0);
+            animator.SetFloat("moveSpeed", 0);
+            return;
+        }
 
         // 속도의 변화율을 부드럽게 하기 위해 Lerp 사용
         Vector3 smoothedVelocity = Vector3.Lerp(rb.velocity, targetVelocity, Time.deltaTime * 10f);
@@ -133,6 +149,8 @@ public class PenguinController : MonoBehaviour
 
         animator.SetFloat("moveSpeed", moveDirection.magnitude);
     }
+
+
 
     private void HandleJumpInput()
     {
@@ -174,6 +192,12 @@ public class PenguinController : MonoBehaviour
             animator.SetBool("isJumping", true);
             audioSource.PlayOneShot(jumpSound);
             cameraFollow.SetJumping(false);
+
+            // 점프 성공 시 점수 증가
+            if (scoreManager != null)
+            {
+                scoreManager.AddScore(50); // 점프할 때 100점 추가
+            }
         }
     }
 
@@ -254,9 +278,6 @@ public class PenguinController : MonoBehaviour
         // 이제는 더 이상 반복적으로 호출되지 않도록 처리
         isGameFlag = false; // 게임을 멈춘 후 플래그를 초기화하여 반복을 방지
     }
-
-
-
 
 
     private void UpdateIndicator()

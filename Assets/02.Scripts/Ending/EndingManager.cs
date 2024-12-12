@@ -18,23 +18,25 @@ public class EndingManager : MonoBehaviour
     public AudioClip backgroundMusic; // 펭귄 컷신의 배경음악
 
     private int finalScore = 12345; // 예시 점수. 추후 점수를 불러오면 변경 가능.
-
+                                    // EndingManager.cs
     void Start()
     {
-        // 초기화: 모든 화면을 비활성화
+        // PlayerPrefs에서 점수를 가져옴
+        finalScore = PlayerPrefs.GetInt("FinalScore", 0); // 점수 기본값은 0
+
+        // 초기화 및 코루틴 시작
         SetCanvasAlpha(blackScreen, 1);
         SetCanvasAlpha(endingScene, 0);
         SetCanvasAlpha(scoreScreen, 0);
 
-        // 버튼 클릭 이벤트 등록
         if (restartButton != null)
         {
             restartButton.onClick.AddListener(OnRestartButtonClicked);
         }
 
-        // 단계적 실행 시작
         StartCoroutine(PlayEndingSequence());
     }
+
 
     IEnumerator PlayEndingSequence()
     {

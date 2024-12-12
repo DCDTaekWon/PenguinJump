@@ -84,8 +84,8 @@ public class GamePauseManager : MonoBehaviour
         {
             pausePanel.SetActive(true); // 팝업 패널 활성화
         }
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
+        //Cursor.lockState = CursorLockMode.None;
+        //Cursor.visible = true;
     }
 
     // 게임 재개
@@ -100,8 +100,8 @@ public class GamePauseManager : MonoBehaviour
         {
             pausePanel.SetActive(false); // 팝업 패널 비활성화
         }
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        //Cursor.lockState = CursorLockMode.Locked;
+        //Cursor.visible = false;
     }
 
     // 소리 ON/OFF 버튼 토글 기능

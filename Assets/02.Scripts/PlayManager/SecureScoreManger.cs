@@ -40,6 +40,27 @@ public class SecureScoreManager : MonoBehaviour
         }
     }
 
+    public void AddScore(int amount)
+    {
+        score += amount; // 점수 추가
+        displayedScore = Mathf.FloorToInt(score);
+        scoreText.text = displayedScore.ToString();
+
+        if (displayedScore > highScore)
+        {
+            highScore = displayedScore;
+            UpdateHighScoreText();
+            SaveHighScore(highScore);
+        }
+    }
+    public void OnGameClear()
+    {
+        PlayerPrefs.SetInt("FinalScore", CurrentScore); // 점수 저장
+        PlayerPrefs.Save();
+        Debug.Log($"FinalScore 저장됨: {CurrentScore}");
+    }
+
+
     private void UpdateHighScoreText()
     {
         highScoreText.text = highScore.ToString();
