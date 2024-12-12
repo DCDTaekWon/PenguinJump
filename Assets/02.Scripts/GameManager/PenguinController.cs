@@ -44,7 +44,7 @@ public class PenguinController : MonoBehaviour
     /// <summary>
     /// 게임 오버 UI 플래그
     /// </summary>
-    private bool isGameFlag = false;
+    public bool isGameFlag { get; private set; } = false;
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -100,6 +100,7 @@ public class PenguinController : MonoBehaviour
     }
 
 
+    // HandleMovement 메서드 수정
     private void HandleMovement()
     {
         float moveX, moveZ;
@@ -116,14 +117,20 @@ public class PenguinController : MonoBehaviour
             moveZ = joystickInput.y;
         }
 
-        Vector3 moveDirection = new Vector3(moveX, 0, moveZ);
+        Vector3 moveDirection = new Vector3(moveX, 0, moveZ).normalized;
+        Vector3 targetVelocity = moveDirection * moveSpeed;
+
+        // 속도의 변화율을 부드럽게 하기 위해 Lerp 사용
+        Vector3 smoothedVelocity = Vector3.Lerp(rb.velocity, targetVelocity, Time.deltaTime * 10f);
+
+        rb.velocity = new Vector3(smoothedVelocity.x, rb.velocity.y, smoothedVelocity.z);
+
         if (moveDirection.magnitude > 0.1f)
         {
             Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
         }
 
-        rb.velocity = new Vector3(moveDirection.x * moveSpeed, rb.velocity.y, moveDirection.z * moveSpeed);
         animator.SetFloat("moveSpeed", moveDirection.magnitude);
     }
 

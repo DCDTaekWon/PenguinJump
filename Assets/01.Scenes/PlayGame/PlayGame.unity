@@ -350,7 +350,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 537685210}
-  - {fileID: 1552689514}
   - {fileID: 1143024199}
   - {fileID: 1507317207}
   - {fileID: 811982374}
@@ -2483,7 +2482,7 @@ MonoBehaviour:
   spriteTransform: {fileID: 643970006}
   startX: -190
   targetX: 190
-  duration: 240
+  duration: 120
 --- !u!1 &1507317205
 GameObject:
   m_ObjectHideFlags: 0
@@ -2708,7 +2707,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scoreText: {fileID: 855214766}
   highScoreText: {fileID: 906021201}
+  score: 0
   scoreIncreaseRate: 10
+  displayedScore: 0
+  highScore: 0
+  controller: {fileID: 1578862123}
 --- !u!4 &1552689514
 Transform:
   m_ObjectHideFlags: 0
@@ -2718,11 +2721,11 @@ Transform:
   m_GameObject: {fileID: 1552689512}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 465.95746, y: 184.90897, z: 0}
+  m_LocalPosition: {x: 529.8583, y: 244.30554, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 367067732}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1578862118 stripped
 GameObject:
@@ -3028,11 +3031,11 @@ MonoBehaviour:
   platformRotation: {x: 90, y: 0, z: 0}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   warningColor: {r: 1, g: 0, b: 0, a: 1}
-  initialActivePlatforms: 5
+  initialActivePlatforms: 6
   minActivePlatforms: 1
   initialPlatformLifetime: 3
   respawnDelay: 0
-  warningDuration: 0
+  warningDuration: 3
   activationInterval: 2
   reduceInterval: 10
   minPlatformLifetime: 1
@@ -4156,3 +4159,4 @@ SceneRoots:
   - {fileID: 1152825301}
   - {fileID: 367067732}
   - {fileID: 1023472069}
+  - {fileID: 1552689514}
