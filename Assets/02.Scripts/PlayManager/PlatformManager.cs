@@ -82,11 +82,13 @@ public class PlatformManager : MonoBehaviour
         public GameObject platform;
         public PlatformState state;
         public Renderer renderer;
+        public Vector3 initialPosition; // 초기 위치 추가
 
-        public PlatformInfo(GameObject platform, Renderer renderer)
+        public PlatformInfo(GameObject platform, Renderer renderer, Vector3 initialPosition)
         {
             this.platform = platform;
             this.renderer = renderer;
+            this.initialPosition = initialPosition;
             this.state = PlatformState.Break; // 처음에는 Break 상태로 설정
         }
     }
@@ -122,29 +124,24 @@ public class PlatformManager : MonoBehaviour
             {
                 Vector3 spawnPosition = HexToWorldPosition(col, row, width, height);
 
-                // 랜덤으로 프리팹 선택
                 GameObject prefabToSpawn = platformPrefabs[Random.Range(0, platformPrefabs.Length)];
-
                 if (prefabToSpawn == null)
                 {
                     Debug.LogWarning("Warning: Selected prefab is null.");
                     continue;
                 }
 
-                // 선택된 프리팹을 생성
                 GameObject platform = Instantiate(prefabToSpawn, spawnPosition, Quaternion.Euler(platformRotation));
                 platform.layer = LayerMask.NameToLayer("GroundLayer");
                 MeshRenderer renderer = platform.GetComponent<MeshRenderer>();
-                platformInfos.Add(new PlatformInfo(platform, renderer));
+                platformInfos.Add(new PlatformInfo(platform, renderer, spawnPosition)); // 초기 위치 저장
 
-                // 처음 생성된 발판을 Break 상태로 비활성화
                 platform.SetActive(false);
             }
         }
 
         Debug.Log("발판 생성 완료: 총 발판 수 = " + platformInfos.Count);
     }
-
 
     private void ActivateInitialPlatforms()
     {
@@ -227,19 +224,16 @@ public class PlatformManager : MonoBehaviour
 
     private void ActivatePlatform(PlatformInfo platformInfo)
     {
-        // 발판을 처음 비활성화된 상태로 -2 아래에 위치시킵니다.
         platformInfo.platform.SetActive(true);
-        platformInfo.platform.transform.position += new Vector3(0, -2f, 0);  // y축 -2로 이동
+        platformInfo.platform.transform.position = platformInfo.initialPosition + new Vector3(0, -2f, 0); // 초기 위치 기준 아래로 이동
         platformInfo.renderer.material.color = normalColor;
         platformInfo.state = PlatformState.Normal;
 
-        // DOTween을 사용하여 -2에서 원래 위치로 애니메이션
-        platformInfo.platform.transform.DOMoveY(platformInfo.platform.transform.position.y + 2f, 3f) // 3초에 걸쳐 위로 이동
-            .SetEase(Ease.OutBounce);  // 자연스럽게 위로 튀는 느낌
+        platformInfo.platform.transform.DOMoveY(platformInfo.initialPosition.y, 3f) // 초기 위치로 상승
+            .SetEase(Ease.OutBounce);
 
-        Debug.Log($"활성화된 발판: {platformInfo.platform.name}, 스케일: {platformInfo.platform.transform.localScale}, 위치: {platformInfo.platform.transform.position}");
+        Debug.Log($"활성화된 발판: {platformInfo.platform.name}, 위치: {platformInfo.platform.transform.position}");
     }
-
 
     private void PlacePenguinOnPlatform(PlatformInfo platformInfo)
     {
@@ -265,13 +259,16 @@ public class PlatformManager : MonoBehaviour
     private IEnumerator DisableAndRespawnPlatform(PlatformInfo platformInfo)
     {
         yield return new WaitForSeconds(warningDuration); // 경고 시간이 지나면
-        // 발판을 아래로 하강시키고 비활성화
-        platformInfo.platform.transform.DOMoveY(platformInfo.platform.transform.position.y - 2f, 1f) // 1초에 걸쳐 아래로 이동
-            .SetEase(Ease.InQuad)  // 부드럽게 하강
-            .OnComplete(() => {
-                platformInfo.platform.SetActive(false);  // 하강 후 발판을 비활성화
+        platformInfo.platform.transform.DOMoveY(platformInfo.initialPosition.y - 2f, 1f) // 초기 위치 기준 하강
+            .SetEase(Ease.InQuad)
+            .OnComplete(() =>
+            {
+                platformInfo.platform.SetActive(false);
                 platformInfo.state = PlatformState.Break;
-                Debug.Log("발판 비활성화 및 Break 상태로 전환: " + platformInfo.platform.name);
+
+                // 초기 위치로 복원
+                platformInfo.platform.transform.position = platformInfo.initialPosition;
+                Debug.Log("발판 비활성화 및 초기화 완료: " + platformInfo.platform.name);
             });
     }
 }

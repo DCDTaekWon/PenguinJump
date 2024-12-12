@@ -1,26 +1,36 @@
 using System.Collections;
 using UnityEngine;
-using TMPro; // TextMeshPro 네임스페이스 추가
+using TMPro;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class EndingManager : MonoBehaviour
 {
-    public CanvasGroup blackScreen; // 검정 화면
-    public CanvasGroup endingScene; // 엔딩 컷신 화면
-    public CanvasGroup scoreScreen; // 점수 표시 화면
-    public TextMeshProUGUI scoreText; // TextMeshPro로 점수 표시
-    public Button restartButton; // "처음으로" 버튼
+    public CanvasGroup blackScreen;
+    public CanvasGroup endingScene;
+    public CanvasGroup scoreScreen;
+    public TextMeshProUGUI scoreText;
+    public Button restartButton;
 
-    public AudioSource effectAudioSource; // 효과음을 위한 AudioSource
-    public AudioSource musicAudioSource; // 배경음악을 위한 AudioSource
-    public AudioClip soundEffect; // 검정 화면에서 나올 효과음
-    public AudioClip backgroundMusic; // 펭귄 컷신의 배경음악
+    public AudioSource effectAudioSource;
+    public AudioSource musicAudioSource;
+    public AudioClip soundEffect;
+    public AudioClip backgroundMusic;
 
-    private int finalScore = 12345; // 예시 점수. 추후 점수를 불러오면 변경 가능.
+    private int finalScore = 0;
 
     void Start()
     {
+        // SecureScoreManager로부터 최종 점수 가져오기
+        if (SecureScoreManager.Instance != null)
+        {
+            finalScore = SecureScoreManager.Instance.CurrentScore;
+        }
+        else
+        {
+            Debug.LogWarning("SecureScoreManager 인스턴스를 찾을 수 없습니다.");
+        }
+
         // 초기화: 모든 화면을 비활성화
         SetCanvasAlpha(blackScreen, 1);
         SetCanvasAlpha(endingScene, 0);
@@ -36,38 +46,71 @@ public class EndingManager : MonoBehaviour
         StartCoroutine(PlayEndingSequence());
     }
 
+    private void OnRestartButtonClicked()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded; // 씬 로드 이벤트 등록
+
+        if (SecureScoreManager.Instance != null)
+        {
+            SecureScoreManager.Instance.ResetScore(); // 점수 초기화
+        }
+
+        SceneManager.LoadScene("Title"); // 타이틀 씬 로드
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+
+        // 타이틀 씬에서는 UI를 재연결하지 않음
+        if (scene.name == "Title")
+        {
+            Debug.Log("Title scene loaded, no UI to rebind.");
+            return;
+        }
+
+        // 게임 씬 또는 클리어 씬에서 UI 재연결
+        TMP_Text newScoreText = GameObject.Find("ScoreText")?.GetComponent<TMP_Text>();
+        TMP_Text newHighScoreText = GameObject.Find("HighScoreText")?.GetComponent<TMP_Text>();
+
+        if (SecureScoreManager.Instance != null && newScoreText != null && newHighScoreText != null)
+        {
+            SecureScoreManager.Instance.RebindUI(newScoreText, newHighScoreText);
+        }
+        else
+        {
+            Debug.LogWarning("Failed to rebind SecureScoreManager UI in scene: " + scene.name);
+        }
+    }
+
+
     IEnumerator PlayEndingSequence()
     {
-        // 1단계: 검정 화면 유지 후 효과음 재생 및 페이드 아웃
         if (effectAudioSource != null && soundEffect != null)
         {
-            effectAudioSource.PlayOneShot(soundEffect); // 효과음 재생
+            effectAudioSource.PlayOneShot(soundEffect);
         }
-        yield return new WaitForSeconds(5f); // 5초 대기
-        yield return StartCoroutine(FadeCanvas(blackScreen, false)); // 검정 화면 페이드 아웃
+        yield return new WaitForSeconds(5f);
+        yield return StartCoroutine(FadeCanvas(blackScreen, false));
 
-        // 2단계: 엔딩 컷신 화면 표시 및 배경음악 재생
         if (musicAudioSource != null && backgroundMusic != null)
         {
             musicAudioSource.clip = backgroundMusic;
-            musicAudioSource.loop = true; // 배경음악 반복 설정
-            musicAudioSource.Play(); // 배경음악 재생
+            musicAudioSource.loop = true;
+            musicAudioSource.Play();
         }
-        yield return StartCoroutine(FadeCanvas(endingScene, true)); // 엔딩 컷신 페이드 인
-        yield return new WaitForSeconds(5f); // 4초 동안 엔딩 컷신 유지
+        yield return StartCoroutine(FadeCanvas(endingScene, true));
+        yield return new WaitForSeconds(5f);
 
-        // 3단계: 점수 화면 표시
-        StartCoroutine(FadeCanvas(endingScene, false)); // 엔딩 컷신 페이드 아웃
-        yield return StartCoroutine(FadeCanvas(scoreScreen, true)); // 점수 화면 페이드 인
+        StartCoroutine(FadeCanvas(endingScene, false));
+        yield return StartCoroutine(FadeCanvas(scoreScreen, true));
 
-        // 점수 애니메이션 시작
         yield return StartCoroutine(AnimateScore(0, finalScore));
     }
 
-    // 숫자 애니메이션 (점수 표시)
     IEnumerator AnimateScore(int startScore, int endScore)
     {
-        float duration = 2f; // 애니메이션 지속 시간
+        float duration = 2f;
         float elapsed = 0f;
 
         while (elapsed < duration)
@@ -79,15 +122,13 @@ public class EndingManager : MonoBehaviour
             yield return null;
         }
 
-        // 최종 점수 설정
         if (scoreText != null)
             scoreText.text = endScore.ToString();
     }
 
-    // 페이드 처리 함수
     IEnumerator FadeCanvas(CanvasGroup canvasGroup, bool fadeIn)
     {
-        float duration = 1f; // 페이드 시간
+        float duration = 1f;
         float elapsed = 0f;
         float startAlpha = fadeIn ? 0 : 1;
         float endAlpha = fadeIn ? 1 : 0;
@@ -104,18 +145,11 @@ public class EndingManager : MonoBehaviour
             canvasGroup.alpha = endAlpha;
     }
 
-    // 캔버스 알파값 설정
     void SetCanvasAlpha(CanvasGroup canvasGroup, float alpha)
     {
         if (canvasGroup != null)
         {
             canvasGroup.alpha = alpha;
         }
-    }
-
-    // "처음으로" 버튼 클릭 시 실행
-    public void OnRestartButtonClicked()
-    {
-        SceneManager.LoadScene("Title");
     }
 }

@@ -945,7 +945,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42f6cb38f92a7eb4fa4299eb34ce9fd9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DeathPanel: {fileID: 0}
+  DeathPanel: {fileID: 2078424732}
   deathPopupPanel: {fileID: 2078424732}
   restartButton: {fileID: 2014920325}
   resumeButton: {fileID: 1156381127}
@@ -2483,7 +2483,7 @@ MonoBehaviour:
   spriteTransform: {fileID: 643970006}
   startX: -190
   targetX: 190
-  duration: 240
+  duration: 5
 --- !u!1 &1507317205
 GameObject:
   m_ObjectHideFlags: 0
@@ -2766,7 +2766,7 @@ MonoBehaviour:
   GroundLayer:
     serializedVersion: 2
     m_Bits: 128
-  isMobile: 1
+  isMobile: 0
 --- !u!54 &1578862124
 Rigidbody:
   m_ObjectHideFlags: 0
