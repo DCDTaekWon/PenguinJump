@@ -17,33 +17,22 @@ public class EndingManager : MonoBehaviour
     public AudioClip soundEffect; // 검정 화면에서 나올 효과음
     public AudioClip backgroundMusic; // 펭귄 컷신의 배경음악
 
-    private int finalScore = 0;
+    private int finalScore = 12345; // 예시 점수. 추후 점수를 불러오면 변경 가능.
 
     void Start()
     {
-        if (SecureScoreManager.Instance != null)
-        {
-            finalScore = SecureScoreManager.Instance.CurrentScore;
-            Debug.Log($"EndingManager: Retrieved final score: {finalScore}");
-
-            if (scoreText != null)
-                scoreText.text = finalScore.ToString(); // UI에 최종 점수 반영
-        }
-        else
-        {
-            Debug.LogError("SecureScoreManager.Instance가 null입니다. 확인 필요.");
-        }
-
-        // UI 초기화
+        // 초기화: 모든 화면을 비활성화
         SetCanvasAlpha(blackScreen, 1);
         SetCanvasAlpha(endingScene, 0);
         SetCanvasAlpha(scoreScreen, 0);
 
+        // 버튼 클릭 이벤트 등록
         if (restartButton != null)
         {
             restartButton.onClick.AddListener(OnRestartButtonClicked);
         }
 
+        // 단계적 실행 시작
         StartCoroutine(PlayEndingSequence());
     }
 
@@ -65,17 +54,17 @@ public class EndingManager : MonoBehaviour
             musicAudioSource.Play(); // 배경음악 재생
         }
         yield return StartCoroutine(FadeCanvas(endingScene, true)); // 엔딩 컷신 페이드 인
-        yield return new WaitForSeconds(5f); // 5초 대기
+        yield return new WaitForSeconds(5f); // 4초 동안 엔딩 컷신 유지
 
         // 3단계: 점수 화면 표시
         StartCoroutine(FadeCanvas(endingScene, false)); // 엔딩 컷신 페이드 아웃
         yield return StartCoroutine(FadeCanvas(scoreScreen, true)); // 점수 화면 페이드 인
 
-        // 최종 점수 애니메이션 시작
+        // 점수 애니메이션 시작
         yield return StartCoroutine(AnimateScore(0, finalScore));
     }
 
-    // 점수 애니메이션 (점수 표시)
+    // 숫자 애니메이션 (점수 표시)
     IEnumerator AnimateScore(int startScore, int endScore)
     {
         float duration = 2f; // 애니메이션 지속 시간
@@ -124,14 +113,9 @@ public class EndingManager : MonoBehaviour
         }
     }
 
+    // "처음으로" 버튼 클릭 시 실행
     public void OnRestartButtonClicked()
     {
-        if (SecureScoreManager.Instance != null)
-        {
-            SecureScoreManager.Instance.ResetScore();
-            Debug.Log("EndingManager: Score reset to 0.");
-        }
-
         SceneManager.LoadScene("Title");
     }
 }
