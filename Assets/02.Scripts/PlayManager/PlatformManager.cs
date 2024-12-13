@@ -139,33 +139,34 @@ public class PlatformManager : MonoBehaviour
             switch (i)
             {
                 case 0:
-                    currentDifficultyLevel = 0;
+                    currentDifficultyLevel = 1;
                     currentPlatformLifetime = 3.0f;
                     activationInterval = 2.0f;
-                    reduceInterval = 7.0f;
+                    reduceInterval = 6.0f;
                     
                     break;
 
                 case 1:
-                    currentDifficultyLevel = 1;
+                    currentDifficultyLevel = 2;
                     currentPlatformLifetime = 2.5f;
                     activationInterval = 1.8f;
-                    reduceInterval = 6.0f;
+                    reduceInterval = 5.0f;
                     break;
 
                 case 2:
                     currentDifficultyLevel = 2;
                     currentPlatformLifetime = 2.0f;
                     activationInterval = 1.6f;
-                    reduceInterval = 6.0f;
+                    reduceInterval = 4.0f;
+                    maxPlatformsToDestroy = 2;
                     break;
 
                 case 3:
                     currentDifficultyLevel = 3;
                     currentPlatformLifetime = 1.5f;
                     activationInterval = 1.4f;
-                    reduceInterval = 5.0f;
-                    maxPlatformsToDestroy = 2;
+                    reduceInterval = 3.0f;
+                    maxPlatformsToDestroy = 3;
                     break;
                 
                 // case 4는 실제 인게임에선 작동하지 않음. 3가 마지막!
@@ -173,7 +174,7 @@ public class PlatformManager : MonoBehaviour
                     currentDifficultyLevel = 3;
                     currentPlatformLifetime = 1.0f;
                     activationInterval = 1.2f;
-                    reduceInterval = 4.0f;
+                    reduceInterval = 3.0f;
                     break;
             }
 

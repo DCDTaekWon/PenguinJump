@@ -19,6 +19,7 @@ public class FeverTimeManager : MonoBehaviour
     [Header("Audio Settings")]
     public AudioSource audioSource; // 게임 오브젝트의 AudioSource
     public AudioClip feverBGM; // 피버타임 브금
+    public AudioClip defaultBGM; // 기본 스테이지 브금
 
     private bool isFeverActive = false;
 
@@ -32,6 +33,14 @@ public class FeverTimeManager : MonoBehaviour
             feverImageRect.gameObject.SetActive(false);
         }
 
+        // 기본 브금 재생
+        if (audioSource != null && defaultBGM != null)
+        {
+            audioSource.clip = defaultBGM; // 기본 브금을 설정
+            audioSource.volume = 0.8f; // 초기 볼륨 설정
+            audioSource.Play(); // 재생 시작
+        }
+
         // 피버타임 시작 코루틴
         Invoke(nameof(StartFeverTime), initialDelay);
     }
@@ -43,6 +52,7 @@ public class FeverTimeManager : MonoBehaviour
         isFeverActive = true;
         Debug.Log("피버타임 활성화!");
 
+        // FeverTime UI 활성화 및 애니메이션 실행
         feverImageRect.gameObject.SetActive(true);
         feverImageRect.anchoredPosition = offScreenStartPosition;
 
@@ -55,17 +65,34 @@ public class FeverTimeManager : MonoBehaviour
         feverSequence.OnComplete(() =>
         {
             feverImageRect.gameObject.SetActive(false);
-            Debug.Log("피버타임 종료!");
-            //isFeverActive = false;
         });
 
+        // FeverTime 브금 재생
         if (audioSource != null && feverBGM != null)
         {
-            audioSource.clip = feverBGM;
-            audioSource.Play();
+            audioSource.clip = feverBGM; // FeverTime 브금 설정
+            audioSource.volume = 0.8f; // 볼륨 복구
+            audioSource.Play(); // 재생
         }
+
+        // 피버타임 종료 예약 (feverDuration 기준)
+        Invoke(nameof(EndFeverTime), feverDuration);
 
         feverSequence.Play();
     }
 
+    private void EndFeverTime()
+    {
+        isFeverActive = false;
+
+        Debug.Log("피버타임 종료!");
+
+        // 기본 브금 복구
+        if (audioSource != null && defaultBGM != null)
+        {
+            audioSource.clip = defaultBGM; // 기본 브금으로 변경
+            audioSource.volume = 1f; // 적절한 볼륨 복구
+            audioSource.Play(); // 재생 시작
+        }
+    }
 }
